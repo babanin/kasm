@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "1.8.20"
-    application
+    kotlin("jvm") version "1.9.0"
+    `java-library`
 }
 
 group = "net.babanin"
@@ -16,6 +16,7 @@ repositories {
 
 dependencies {
     implementation(group = "org.ow2.asm", name= "asm", version = "9.5")
+    implementation(group = "org.ow2.asm", name= "asm-util", version = "9.5")
     
     testImplementation(kotlin("test"))
 }
@@ -25,9 +26,5 @@ tasks.test {
 }
 
 kotlin {
-    jvmToolchain(11)
-}
-
-application {
-    mainClass.set("MainKt")
+    jvmToolchain(17)
 }

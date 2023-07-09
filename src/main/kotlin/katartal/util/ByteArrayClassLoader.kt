@@ -1,4 +1,4 @@
-package net.babanin.kasm.util
+package katartal.util
 
 class ByteArrayClassLoader(parent: ClassLoader?) : ClassLoader(parent) {
     fun loadClass(name: String, b: ByteArray): Class<*> {
