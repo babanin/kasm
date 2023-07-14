@@ -1,21 +1,21 @@
 package katartal.model
 
-class ClassBuilder(name: String, var access: ClassAccess, parent : String = "java/lang/Object") {
+class ClassBuilder(name: String, var access: ClassAccess, parent: String = "java/lang/Object") {
     val name: String
         get() = constantPool.readClass(classNameIdx)!!
 
-    val parent: String 
+    val parent: String
         get() = constantPool.readClass(parentClassNameIdx)!!
-    
+
     var implements: MutableList<UShort> = mutableListOf()
     val version: JavaVersion = JavaVersion.V17
-    
-    private val fieldBuilders: MutableList<FieldBuilder> = mutableListOf()
-    private val methodBuilders: MutableList<MethodBuilder> = mutableListOf()
-    
-    val classNameIdx : UShort
-    var parentClassNameIdx : UShort
-    
+
+    val fieldBuilders: MutableList<FieldBuilder> = mutableListOf()
+    val methodBuilders: MutableList<MethodBuilder> = mutableListOf()
+
+    val classNameIdx: UShort
+    var parentClassNameIdx: UShort
+
     val constantPool = ConstantPool()
 
     init {
@@ -24,7 +24,7 @@ class ClassBuilder(name: String, var access: ClassAccess, parent : String = "jav
     }
 
     fun _constructor(parameters: List<Pair<String, Any>> = listOf(), init: MethodBuilder.() -> Unit): MethodBuilder {
-        val methodBuilder = MethodBuilder(name, ctr = true)
+        val methodBuilder = MethodBuilder(ctr = true, parameters = parameters, constantPool = constantPool)
         methodBuilders.add(methodBuilder)
         methodBuilder.init()
         return methodBuilder
@@ -33,20 +33,13 @@ class ClassBuilder(name: String, var access: ClassAccess, parent : String = "jav
     fun _method(
         name: String,
         parameters: List<Pair<String, Any>> = listOf(),
-        returns: Any = Void::class.java,
         init: MethodBuilder.() -> Unit
     ): MethodBuilder {
-        val methodBuilder = MethodBuilder(name)
+        val methodBuilder = MethodBuilder(name, parameters = parameters, constantPool = constantPool)
         methodBuilders.add(methodBuilder)
 
         methodBuilder.init()
         return methodBuilder
-    }
-
-    private fun defaultCtr(): MethodBuilder {
-        return _method("<init>") {
-            invokeSpecial(Object::class.java, "<init>", "()V")
-        }
     }
 
     infix fun extends(parentCls: String): ClassBuilder {
@@ -72,5 +65,10 @@ class ClassBuilder(name: String, var access: ClassAccess, parent : String = "jav
     fun <T> Class<T>.path(): String {
         val pkg = this.`package`
         return pkg.name.replace(".", "/") + "/" + this.simpleName
+    }
+
+    fun flush() {
+        methodBuilders.forEach { it.flush() }
+        fieldBuilders.forEach { it.flush() }
     }
 }

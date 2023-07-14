@@ -6,5 +6,6 @@ import katartal.model.ClassAccess
 fun _class(name: String, init: ClassBuilder.() -> Unit = {}): ClassBuilder {
     val classBuilder = ClassBuilder(name, ClassAccess.PUBLIC)
     classBuilder.init()
+    classBuilder.flush()
     return classBuilder
 }

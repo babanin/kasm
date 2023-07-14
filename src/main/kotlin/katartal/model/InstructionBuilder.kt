@@ -1,6 +1,8 @@
 package katartal.model
 
-class InstructionBuilder(code: ByteCode) {     
+class InstructionBuilder(val code: ByteCode) {     
+    val operands = mutableListOf<UByte>()
+    
     
     fun _operand(cls: Class<*>) {
         
@@ -10,9 +12,9 @@ class InstructionBuilder(code: ByteCode) {
         
     }
     
-    fun const(int: Int) {
-        
-    }
-    
+    fun _reference(idx : UShort) {
+        operands += (idx.toInt() shr 8 and 255).toUByte()
+        operands += (idx.toInt() and 255).toUByte()
+    }    
     
 }
