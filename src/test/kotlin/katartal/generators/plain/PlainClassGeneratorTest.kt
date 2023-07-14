@@ -42,8 +42,7 @@ class PlainClassGeneratorTest {
     @Test
     fun shouldGenerateValidClassWithImplementedMarkerInterface() {
         // given
-        val klass = _class("Test") {
-        } implements Serializable::class.java
+        val klass = _class("Test") implements Serializable::class.java
 
         // when
         val clsBytes = PlainClassGenerator().toByteArray(klass)
@@ -63,29 +62,11 @@ class PlainClassGeneratorTest {
     fun shouldGenerateValidClassWithCustomConstructor() {
         // given
         val klass = _class("Test") {
-            _constructor(listOf("name" to String::class.java)) { }
-        }
-
-        // when
-        val clsBytes = PlainClassGenerator().toByteArray(klass)
-
-        // then
-        val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
-        val toClass = classLoader.loadClass(klass.name, clsBytes)
-
-        assertThat(toClass).isNotNull;
-    }
-
-    @Test
-    fun shouldGenerateValidClassWithEqualsMethod() {
-        // given
-        val klass = _class("Test") {
-            _method(
-                name = "equals",
-                parameters = listOf("other" to Object::class.java),
-                returns = Boolean::class.java
-            ) {
-                _return(true)
+            _constructor(listOf("name" to String::class.java)) { 
+                _code {
+                    _invokeSpecial(Object::class.java, "<init>", "()V")
+                    _return()
+                }
             }
         }
 
@@ -96,20 +77,43 @@ class PlainClassGeneratorTest {
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
         val toClass = classLoader.loadClass(klass.name, clsBytes)
 
-        assertThat(toClass).isNotNull;
+        assertThat(toClass).isNotNull
+
+        val constructor = toClass.getConstructor(String::class.java)
+        assertThat(constructor).isNotNull
+    }
+
+    @Test
+    fun shouldGenerateValidClassWithEqualsMethod() {
+        // given
+        val klass = _class("Test") {
+            _method("equals", listOf("other" to Object::class.java)) {
+                _code {
+                    _return(true)
+                }
+            } returns Boolean::class.java
+        }
+
+        // when
+        val clsBytes = PlainClassGenerator().toByteArray(klass)
+
+        // then
+        val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
+        val toClass = classLoader.loadClass(klass.name, clsBytes)
+
+        assertThat(toClass).isNotNull
+        assertThat(toClass).hasDeclaredMethods("equals")
     }
 
     @Test
     fun shouldGenerateValidClassEqualsMethodThrowsException() {
         // given
         val klass = _class("Test") {
-            _method(
-                name = "equals",
-                parameters = listOf("other" to Object::class.java),
-                returns = Boolean::class.java
-            ) {
-                _return(true)
-            } throws FileNotFoundException::class.java
+            _method("equals", listOf("other" to Object::class.java)) {
+                _code {
+                    _return(true)
+                }
+            } returns Boolean::class.java throws FileNotFoundException::class.java
         }
 
         // when

@@ -2,62 +2,10 @@ package katartal.generators.plain
 
 import katartal.generators.ClassGenerator
 import katartal.model.ClassBuilder
+import katartal.model.CodeAttribute
+import katartal.util.DynamicByteArray
 
 class PlainClassGenerator : ClassGenerator {
-    private class DynamicByteArray {
-        var store = ByteArray(1024)
-
-        var pointer = 0
-
-        private fun resizeIfNeeded(expected: Int) {
-            if (pointer + expected >= store.size) {
-                store = store.copyOf(store.size * 2)
-            }
-        }
-
-        fun putU1(num: UByte) {
-            resizeIfNeeded(1)
-
-            store[pointer] = num.toByte()
-            pointer += 1
-        }
-
-        fun putU2(short: UShort) {
-            putU2(short.toUInt())
-        }
-
-        fun putU2(num: UInt) {
-            resizeIfNeeded(2)
-
-            store[pointer] = ((num shr 8) and 255u).toByte()
-            pointer += 1
-            store[pointer] = (num and 255u).toByte()
-            pointer += 1
-        }
-
-        fun putU4(num: UInt) {
-            resizeIfNeeded(4)
-
-            store[pointer] = ((num shr 24) and 255u).toByte()
-            pointer += 1
-            store[pointer] = ((num shr 16) and 255u).toByte()
-            pointer += 1
-            store[pointer] = ((num shr 8) and 255u).toByte()
-            pointer += 1
-            store[pointer] = (num and 255u).toByte()
-            pointer += 1
-        }
-
-        fun putByteArray(bytes: ByteArray) {
-            resizeIfNeeded(bytes.size)
-            bytes.copyInto(store, pointer)
-            pointer += bytes.size
-        }
-
-        fun toByteArray(): ByteArray {
-            return store.copyOf(pointer)
-        }
-    }
 
     /**
      * ClassFile {
@@ -103,7 +51,18 @@ class PlainClassGenerator : ClassGenerator {
         cls.putU2(0u) // fields_count
         // fields
 
-        cls.putU2(0u) // methods_count
+        cls.putU2(clsBuilder.methodBuilders.size.toUInt()) // methods_count
+        for (methodBuilder in clsBuilder.methodBuilders) {
+            cls.putU2(methodBuilder.access.opcode)
+            cls.putU2(methodBuilder.nameCpIndex)
+            cls.putU2(methodBuilder.descriptorCpIndex)
+
+            val attributes = methodBuilder.attributes
+            cls.putU2(attributes.size)
+            for (attribute in attributes) {
+                cls.putByteArray(attribute.toByteArray())
+            }
+        }
         // methods
 
         cls.putU2(0u) // attributes_count
