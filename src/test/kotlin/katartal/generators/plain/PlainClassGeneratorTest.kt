@@ -4,23 +4,17 @@ import katartal.dsl._class
 import katartal.util.ByteArrayClassLoader
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import java.io.File
 import java.io.FileNotFoundException
-import java.io.FileOutputStream
 import java.io.Serializable
 
 class PlainClassGeneratorTest {
     @Test
     fun shouldGenerateEmptyValidClass() {
         // given
-        val klass = _class("Test") {    }
+        val klass = _class("Test")
 
         // when
         val clsBytes = PlainClassGenerator().toByteArray(klass)
-
-        val fileOutputStream = FileOutputStream(File("Test.class"))
-        fileOutputStream.write(clsBytes)
-        fileOutputStream.close()
 
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
@@ -28,7 +22,23 @@ class PlainClassGeneratorTest {
 
         assertThat(toClass).isNotNull;
     }
-    
+
+    @Test
+    fun shouldGenerateEmptyClassWhichExtendsCustomClass() {
+        // given
+        val klass = _class("Test") extends ArrayList::class.java
+
+        // when
+        val clsBytes = PlainClassGenerator().toByteArray(klass)
+
+        // then
+        val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
+        val toClass = classLoader.loadClass(klass.name, clsBytes)
+
+        assertThat(toClass).isNotNull;
+        assertThat(toClass.superclass).isEqualTo(ArrayList::class.java)
+    }
+
     @Test
     fun shouldGenerateValidClassWithImplementedMarkerInterface() {
         // given
@@ -38,34 +48,26 @@ class PlainClassGeneratorTest {
         // when
         val clsBytes = PlainClassGenerator().toByteArray(klass)
 
-        val fileOutputStream = FileOutputStream(File("Test.class"))
-        fileOutputStream.write(clsBytes)
-        fileOutputStream.close()
-
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
         val toClass = classLoader.loadClass(klass.name, clsBytes)
-        
+
         assertThat(toClass).isNotNull
         assertThat(toClass.interfaces)
             .isNotNull
             .isNotEmpty
             .containsExactly(Serializable::class.java)
     }
-    
+
     @Test
     fun shouldGenerateValidClassWithCustomConstructor() {
         // given
         val klass = _class("Test") {
             _constructor(listOf("name" to String::class.java)) { }
-        } 
+        }
 
         // when
         val clsBytes = PlainClassGenerator().toByteArray(klass)
-
-        val fileOutputStream = FileOutputStream(File("Test.class"))
-        fileOutputStream.write(clsBytes)
-        fileOutputStream.close()
 
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
@@ -73,7 +75,7 @@ class PlainClassGeneratorTest {
 
         assertThat(toClass).isNotNull;
     }
-    
+
     @Test
     fun shouldGenerateValidClassWithEqualsMethod() {
         // given
@@ -90,17 +92,13 @@ class PlainClassGeneratorTest {
         // when
         val clsBytes = PlainClassGenerator().toByteArray(klass)
 
-        val fileOutputStream = FileOutputStream(File("Test.class"))
-        fileOutputStream.write(clsBytes)
-        fileOutputStream.close()
-
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
         val toClass = classLoader.loadClass(klass.name, clsBytes)
 
         assertThat(toClass).isNotNull;
     }
-    
+
     @Test
     fun shouldGenerateValidClassEqualsMethodThrowsException() {
         // given
@@ -116,10 +114,6 @@ class PlainClassGeneratorTest {
 
         // when
         val clsBytes = PlainClassGenerator().toByteArray(klass)
-
-        val fileOutputStream = FileOutputStream(File("Test.class"))
-        fileOutputStream.write(clsBytes)
-        fileOutputStream.close()
 
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
