@@ -1,11 +1,10 @@
 package katartal.dsl
 
 import katartal.model.ClassBuilder
-import katartal.model.KlassAccess
-import katartal.model._Class
+import katartal.model.ClassAccess
 
-fun klass(name: String, init: ClassBuilder.() -> Unit): _Class {
-    val classBuilder = ClassBuilder(name, KlassAccess.PUBLIC)
+fun _class(name: String, init: ClassBuilder.() -> Unit): ClassBuilder {
+    val classBuilder = ClassBuilder(name, ClassAccess.PUBLIC)
     classBuilder.init()
-    return classBuilder.build()
+    return classBuilder
 }

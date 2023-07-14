@@ -14,11 +14,9 @@ repositories {
     }
 }
 
-dependencies {
-    implementation(group = "org.ow2.asm", name= "asm", version = "9.5")
-    implementation(group = "org.ow2.asm", name= "asm-util", version = "9.5")
-    
-    testImplementation(kotlin("test"))
+dependencies {    
+    testImplementation(kotlin("test"))  
+    testImplementation("org.assertj:assertj-core:3.24.2")
 }
 
 tasks.test {

@@ -1,7 +1,7 @@
 package katartal.generators
 
-import katartal.model._Class
+import katartal.model.ClassBuilder
 
 interface ClassGenerator {
-    fun toByteArray(cls: _Class) : ByteArray
+    fun toByteArray(clsBuilder: ClassBuilder) : ByteArray
 }

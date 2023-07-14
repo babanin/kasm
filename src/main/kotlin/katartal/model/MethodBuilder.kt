@@ -3,7 +3,7 @@ package katartal.model
 import katartal.util.path
 
 class MethodBuilder(val name: String = "<init>", val ctr: Boolean = false) {
-
+    val throws = mutableListOf<String>()
     val instructions = mutableListOf<InstructionBuilder>()
 
     fun _return(boolean: Boolean) {
@@ -31,8 +31,19 @@ class MethodBuilder(val name: String = "<init>", val ctr: Boolean = false) {
         instructions.add(builder)
         return builder
     }
+    
+    fun <T> Class<T>.path(): String {
+        val pkg = this.`package`
+        return pkg.name.replace(".", "/") + "/" + this.simpleName
+    }
 
-    fun build(): _Method {
-        return _Method(MethodAccess.PUBLIC, name)
+    infix fun throws(interfaceCls: String): MethodBuilder {
+        this.throws += interfaceCls
+        return this
+    }
+
+    infix fun <T : Any> throws(interfaceCls: Class<T>): MethodBuilder {
+        this.throws += interfaceCls.path()
+        return this
     }
 }

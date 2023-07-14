@@ -1,3 +1,3 @@
 
-rootProject.name = "kasm"
+rootProject.name = "katartal"
 
