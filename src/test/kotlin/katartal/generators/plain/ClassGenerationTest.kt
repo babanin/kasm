@@ -1,13 +1,15 @@
 package katartal.generators.plain
 
 import katartal.dsl._class
+import katartal.model.method.MethodAccess
+import katartal.model.method.MethodAccess.Companion.PUBLIC
+import katartal.model.method.MethodAccess.Companion.STATIC
 import katartal.util.ByteArrayClassLoader
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import java.io.FileNotFoundException
-import java.io.Serializable
+import util.assertThat
+import java.io.*
 
-class PlainClassGeneratorTest {
+class ClassGenerationTest {
     @Test
     fun shouldGenerateEmptyValidClass() {
         // given
@@ -20,7 +22,8 @@ class PlainClassGeneratorTest {
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
         val toClass = classLoader.loadClass(klass.name, clsBytes)
 
-        assertThat(toClass).isNotNull;
+        assertThat(toClass)
+            .isNotNull
     }
 
     @Test
@@ -35,8 +38,9 @@ class PlainClassGeneratorTest {
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
         val toClass = classLoader.loadClass(klass.name, clsBytes)
 
-        assertThat(toClass).isNotNull;
-        assertThat(toClass.superclass).isEqualTo(ArrayList::class.java)
+        assertThat(toClass)
+            .isNotNull
+            .hasSuperclass(ArrayList::class.java)
     }
 
     @Test
@@ -51,18 +55,16 @@ class PlainClassGeneratorTest {
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
         val toClass = classLoader.loadClass(klass.name, clsBytes)
 
-        assertThat(toClass).isNotNull
-        assertThat(toClass.interfaces)
+        assertThat(toClass)
             .isNotNull
-            .isNotEmpty
-            .containsExactly(Serializable::class.java)
+            .implementsInterface(Serializable::class.java)
     }
 
     @Test
     fun shouldGenerateValidClassWithCustomConstructor() {
         // given
         val klass = _class("Test") {
-            _constructor(listOf("name" to String::class.java)) { 
+            _constructor(listOf("name" to String::class.java)) {
                 _code {
                     _invokeSpecial(Object::class.java, "<init>", "()V")
                     _return()
@@ -77,10 +79,9 @@ class PlainClassGeneratorTest {
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
         val toClass = classLoader.loadClass(klass.name, clsBytes)
 
-        assertThat(toClass).isNotNull
-
-        val constructor = toClass.getConstructor(String::class.java)
-        assertThat(constructor).isNotNull
+        assertThat(toClass)
+            .isNotNull
+            .hasConstructor(String::class.java)
     }
 
     @Test
@@ -101,8 +102,9 @@ class PlainClassGeneratorTest {
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
         val toClass = classLoader.loadClass(klass.name, clsBytes)
 
-        assertThat(toClass).isNotNull
-        assertThat(toClass).hasDeclaredMethods("equals")
+        assertThat(toClass)
+            .isNotNull
+            .hasDeclaredMethods("equals")
     }
 
     @Test
@@ -123,6 +125,38 @@ class PlainClassGeneratorTest {
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
         val toClass = classLoader.loadClass(klass.name, clsBytes)
 
-        assertThat(toClass).isNotNull;
+        assertThat(toClass).isNotNull
+    }
+
+    @Test
+    fun shouldPrintHelloWorld() {
+        // given
+        val klass = _class("Test") {
+            _method("main", listOf("args" to Array<String>::class.java), PUBLIC + STATIC) {
+                _code {
+                    _getstatic(System::class.java, "out", PrintStream::class.java)
+                    _ldc("Hello world!")
+                    _invokeVirtual(PrintStream::class.java, "println", "(Ljava/lang/String;)V")
+                    _return()
+                }
+            } 
+        }
+
+        // when
+        val clsBytes = PlainClassGenerator().toByteArray(klass)
+        
+        print(clsBytes)
+        
+        // then
+        val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
+        val toClass = classLoader.loadClass(klass.name, clsBytes)
+
+        assertThat(toClass).isNotNull
+    }
+    
+    fun print(array: ByteArray) {
+        val fop = FileOutputStream(File("Test.class"))
+        fop.write(array)
+        fop.close()
     }
 }

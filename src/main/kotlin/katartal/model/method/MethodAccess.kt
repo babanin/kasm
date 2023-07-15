@@ -1,4 +1,6 @@
-package katartal.model
+package katartal.model.method
+
+import katartal.model.cls.ClassAccess
 
 data class MethodAccess(val opcode: UShort) {
     companion object {
@@ -14,5 +16,9 @@ data class MethodAccess(val opcode: UShort) {
         val ABSTRACT = MethodAccess(0x0400u)
         val STRICT = MethodAccess(0x0800u)
         val SYNTHETIC = MethodAccess(0x1000u)
+    }
+
+    operator fun plus(access: MethodAccess): MethodAccess {
+        return MethodAccess(this.opcode or access.opcode)
     }
 }

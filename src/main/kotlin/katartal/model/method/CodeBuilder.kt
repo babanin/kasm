@@ -1,5 +1,8 @@
-package katartal.model
+package katartal.model.method
 
+import katartal.model.ByteCode
+import katartal.model.ConstantPool
+import katartal.util.descriptor
 import katartal.util.path
 import kotlin.math.max
 
@@ -21,19 +24,49 @@ class CodeBuilder(
         _instruction(ByteCode.IRETURN)
     }
 
+    fun _ldc(cpIndex: UShort): InstructionBuilder {
+        if (cpIndex > 255u) {
+            return _instruction(ByteCode.LDC_W) {
+                _referenceU2(cpIndex)
+            }
+        }
+
+        return _instruction(ByteCode.LDC) {
+            _referenceU1(cpIndex)
+        }
+    }
+
+    fun _ldc(value: String): InstructionBuilder {
+        return _ldc(constantPool.writeString(value))
+    }
+
+    fun _getstatic(cls: Class<*>, name: String, description: Class<*>): InstructionBuilder {
+        return _instruction(ByteCode.GETSTATIC) {
+            _referenceU2(constantPool.writeFieldRef(cls.path(), name, description.descriptor()))
+        }
+    }
+
     fun _return(): InstructionBuilder {
         return _instruction(ByteCode.RETURN)
     }
 
     fun _invokeSpecial(cls: Class<*>, method: String, description: String): List<InstructionBuilder> {
         ensureStackCapacity(1)
-        
+
         return listOf(
             _instruction(ByteCode.ALOAD_0),
             _instruction(ByteCode.INVOKESPECIAL) {
-                _reference(constantPool.writeMethodRef(cls.path(), method, description))
+                _referenceU2(constantPool.writeMethodRef(cls.path(), method, description))
             }
         )
+    }
+
+    fun _invokeVirtual(cls: Class<*>, method: String, description: String): InstructionBuilder {
+        ensureStackCapacity(2)
+
+        return _instruction(ByteCode.INVOKEVIRTUAL) {
+            _referenceU2(constantPool.writeMethodRef(cls.path(), method, description))
+        }
     }
 
     fun _instruction(code: ByteCode, init: InstructionBuilder.() -> Unit): InstructionBuilder {

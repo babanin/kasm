@@ -1,4 +1,4 @@
-package katartal.model
+package katartal.model.field
 
 class FieldBuilder {
     fun flush() {

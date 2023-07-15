@@ -18,9 +18,20 @@ fun <T> Class<T>.descriptor(): String {
     if (isPrimitive) {
         return PRIMITIVES[this]!!
     } else if (isArray) {
+        val sb = StringBuilder()
 
-    } else {
+        var cls: Class<*> = this
+        while (cls.isArray) {
+            sb.append("[")
+            cls = cls.getComponentType()
+        }
+
+        sb.append("L")
+            .append(cls.path())
+            .append(";")
+
+        return sb.toString()
     }
 
-    return "L" + path()
+    return "L" + path() + ";"
 }

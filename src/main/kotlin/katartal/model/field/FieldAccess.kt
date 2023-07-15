@@ -1,4 +1,4 @@
-package katartal.model
+package katartal.model.field
 
 data class FieldAccess(val opcode: Int) {
     companion object {

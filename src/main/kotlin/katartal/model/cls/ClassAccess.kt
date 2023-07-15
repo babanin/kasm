@@ -1,4 +1,4 @@
-package katartal.model
+package katartal.model.cls
 
 data class ClassAccess(val opcode: UShort) {
     companion object {
@@ -12,5 +12,9 @@ data class ClassAccess(val opcode: UShort) {
         val ANNOTATION = ClassAccess(0x2000u)
         val ENUM = ClassAccess(0x4000u)
         val MODULE = ClassAccess(0x8000u)
+    }
+
+    operator fun plus(access: ClassAccess): ClassAccess {
+        return ClassAccess(this.opcode or access.opcode)
     }
 }

@@ -1,325 +1,165 @@
 package katartal.model
 
-@JvmInline
-value class ByteCode(val opcode: UByte) {
-    companion object {
-        // The JVM opcode values (with the MethodVisitor method name used to visit them in comment, and
-        // where '-' means 'same method name as on the previous line').
-        // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html.
-        val NOP = ByteCode(0u) // visitInsn
-
-        val ACONST_NULL = ByteCode(1u) // -
-
-        val ICONST_M1 = ByteCode(2u) // -
-
-        val ICONST_0 = ByteCode(3u) // -
-
-        val ICONST_1 = ByteCode(4u) // -
-
-        val ICONST_2 = ByteCode(5u) // -
-
-        val ICONST_3 = ByteCode(6u) // -
-
-        val ICONST_4 = ByteCode(7u) // -
-
-        val ICONST_5 = ByteCode(8u) // -
-
-        val LCONST_0 = ByteCode(9u) // -
-
-        val LCONST_1 = ByteCode(10u) // -
-
-        val FCONST_0 = ByteCode(11u) // -
-
-        val FCONST_1 = ByteCode(12u) // -
-
-        val FCONST_2 = ByteCode(13u) // -
-
-        val DCONST_0 = ByteCode(14u) // -
-
-        val DCONST_1 = ByteCode(15u) // -
-
-        val BIPUSH = ByteCode(16u) // visitIntInsn
-
-        val SIPUSH = ByteCode(17u) // -
-
-        val LDC = ByteCode(18u) // visitLdcInsn
-
-        val ILOAD = ByteCode(21u) // visitVarInsn
-
-        val LLOAD = ByteCode(22u) // -
-
-        val FLOAD = ByteCode(23u) // -
-
-        val DLOAD = ByteCode(24u) // -
-
-        val ALOAD = ByteCode(25u) // -
-
-        val ALOAD_0 = ByteCode(0x2Au) 
-        
-        val IALOAD = ByteCode(46u) // visitInsn
-
-        val LALOAD = ByteCode(47u) // -
-
-        val FALOAD = ByteCode(48u) // -
-
-        val DALOAD = ByteCode(49u) // -
-
-        val AALOAD = ByteCode(50u) // -
-
-        val BALOAD = ByteCode(51u) // -
-
-        val CALOAD = ByteCode(52u) // -
-
-        val SALOAD = ByteCode(53u) // -
-
-        val ISTORE = ByteCode(54u) // visitVarInsn
-
-        val LSTORE = ByteCode(55u) // -
-
-        val FSTORE = ByteCode(56u) // -
-
-        val DSTORE = ByteCode(57u) // -
-
-        val ASTORE = ByteCode(58u) // -
-
-        val IASTORE = ByteCode(79u) // visitInsn
-
-        val LASTORE = ByteCode(80u) // -
-
-        val FASTORE = ByteCode(81u) // -
-
-        val DASTORE = ByteCode(82u) // -
-
-        val AASTORE = ByteCode(83u) // -
-
-        val BASTORE = ByteCode(84u) // -
-
-        val CASTORE = ByteCode(85u) // -
-
-        val SASTORE = ByteCode(86u) // -
-
-        val POP = ByteCode(87u) // -
-
-        val POP2 = ByteCode(88u) // -
-
-        val DUP = ByteCode(89u) // -
-
-        val DUP_X1 = ByteCode(90u) // -
-
-        val DUP_X2 = ByteCode(91u) // -
-
-        val DUP2 = ByteCode(92u) // -
-
-        val DUP2_X1 = ByteCode(93u) // -
-
-        val DUP2_X2 = ByteCode(94u) // -
-
-        val SWAP = ByteCode(95u) // -
-
-        val IADD = ByteCode(96u) // -
-
-        val LADD = ByteCode(97u) // -
-
-        val FADD = ByteCode(98u) // -
-
-        val DADD = ByteCode(99u) // -
-
-        val ISUB = ByteCode(100u) // -
-
-        val LSUB = ByteCode(101u) // -
-
-        val FSUB = ByteCode(102u) // -
-
-        val DSUB = ByteCode(103u) // -
-
-        val IMUL = ByteCode(104u) // -
-
-        val LMUL = ByteCode(105u) // -
-
-        val FMUL = ByteCode(106u) // -
-
-        val DMUL = ByteCode(107u) // -
-
-        val IDIV = ByteCode(108u) // -
-
-        val LDIV = ByteCode(109u) // -
-
-        val FDIV = ByteCode(110u) // -
-
-        val DDIV = ByteCode(111u) // -
-
-        val IREM = ByteCode(112u) // -
-
-        val LREM = ByteCode(113u) // -
-
-        val FREM = ByteCode(114u) // -
-
-        val DREM = ByteCode(115u) // -
-
-        val INEG = ByteCode(116u) // -
-
-        val LNEG = ByteCode(117u) // -
-
-        val FNEG = ByteCode(118u) // -
-
-        val DNEG = ByteCode(119u) // -
-
-        val ISHL = ByteCode(120u) // -
-
-        val LSHL = ByteCode(121u) // -
-
-        val ISHR = ByteCode(122u) // -
-
-        val LSHR = ByteCode(123u) // -
-
-        val IUSHR = ByteCode(124u) // -
-
-        val LUSHR = ByteCode(125u) // -
-
-        val IAND = ByteCode(126u) // -
-
-        val LAND = ByteCode(127u) // -
-
-        val IOR = ByteCode(128u) // -
-
-        val LOR = ByteCode(129u) // -
-
-        val IXOR = ByteCode(130u) // -
-
-        val LXOR = ByteCode(131u) // -
-
-        val IINC = ByteCode(132u) // visitIincInsn
-
-        val I2L = ByteCode(133u) // visitInsn
-
-        val I2F = ByteCode(134u) // -
-
-        val I2D = ByteCode(135u) // -
-
-        val L2I = ByteCode(136u) // -
-
-        val L2F = ByteCode(137u) // -
-
-        val L2D = ByteCode(138u) // -
-
-        val F2I = ByteCode(139u) // -
-
-        val F2L = ByteCode(140u) // -
-
-        val F2D = ByteCode(141u) // -
-
-        val D2I = ByteCode(142u) // -
-
-        val D2L = ByteCode(143u) // -
-
-        val D2F = ByteCode(144u) // -
-
-        val I2B = ByteCode(145u) // -
-
-        val I2C = ByteCode(146u) // -
-
-        val I2S = ByteCode(147u) // -
-
-        val LCMP = ByteCode(148u) // -
-
-        val FCMPL = ByteCode(149u) // -
-
-        val FCMPG = ByteCode(150u) // -
-
-        val DCMPL = ByteCode(151u) // -
-
-        val DCMPG = ByteCode(152u) // -
-
-        val IFEQ = ByteCode(153u) // visitJumpInsn
-
-        val IFNE = ByteCode(154u) // -
-
-        val IFLT = ByteCode(155u) // -
-
-        val IFGE = ByteCode(156u) // -
-
-        val IFGT = ByteCode(157u) // -
-
-        val IFLE = ByteCode(158u) // -
-
-        val IF_ICMPEQ = ByteCode(159u) // -
-
-        val IF_ICMPNE = ByteCode(160u) // -
-
-        val IF_ICMPLT = ByteCode(161u) // -
-
-        val IF_ICMPGE = ByteCode(162u) // -
-
-        val IF_ICMPGT = ByteCode(163u) // -
-
-        val IF_ICMPLE = ByteCode(164u) // -
-
-        val IF_ACMPEQ = ByteCode(165u) // -
-
-        val IF_ACMPNE = ByteCode(166u) // -
-
-        val GOTO = ByteCode(167u) // -
-
-        val JSR = ByteCode(168u) // -
-
-        val RET = ByteCode(169u) // visitVarInsn
-
-        val TABLESWITCH = ByteCode(170u) // visiTableSwitchInsn
-
-        val LOOKUPSWITCH = ByteCode(171u) // visitLookupSwitch
-
-        val IRETURN = ByteCode(172u) // visitInsn
-
-        val LRETURN = ByteCode(173u) // -
-
-        val FRETURN = ByteCode(174u) // -
-
-        val DRETURN = ByteCode(175u) // -
-
-        val ARETURN = ByteCode(176u) // -
-
-        val RETURN = ByteCode(177u) // -
-
-        val GETSTATIC = ByteCode(178u) // visitFieldInsn
-
-        val PUTSTATIC = ByteCode(179u) // -
-
-        val GETFIELD = ByteCode(180u) // -
-
-        val PUTFIELD = ByteCode(181u) // -
-
-        val INVOKEVIRTUAL = ByteCode(182u) // visitMethodInsn
-
-        val INVOKESPECIAL = ByteCode(183u) // -
-
-        val INVOKESTATIC = ByteCode(184u) // -
-
-        val INVOKEINTERFACE = ByteCode(185u) // -
-
-        val INVOKEDYNAMIC = ByteCode(186u) // visitInvokeDynamicInsn
-
-        val NEW = ByteCode(187u) // visitTypeInsn
-
-        val NEWARRAY = ByteCode(188u) // visitIntInsn
-
-        val ANEWARRAY = ByteCode(189u) // visitTypeInsn
-
-        val ARRAYLENGTH = ByteCode(190u) // visitInsn
-
-        val ATHROW = ByteCode(191u) // -
-
-        val CHECKCAST = ByteCode(192u) // visitTypeInsn
-
-        val INSTANCEOF = ByteCode(193u) // -
-
-        val MONITORENTER = ByteCode(194u) // visitInsn
-
-        val MONITOREXIT = ByteCode(195u) // -
-
-        val MULTIANEWARRAY = ByteCode(197u) // visitMultiANewArrayInsn
-
-        val IFNULL = ByteCode(198u) // visitJumpInsn
-
-        val IFNONNULL = ByteCode(199u) // -
-    }
+// See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html.
+enum class ByteCode(val opcode: UByte) {
+    NOP(0u),
+    ACONST_NULL(1u),
+    ICONST_M1(2u),
+    ICONST_0(3u),
+    ICONST_1(4u),
+    ICONST_2(5u),
+    ICONST_3(6u),
+    ICONST_4(7u),
+    ICONST_5(8u),
+    LCONST_0(9u),
+    LCONST_1(10u),
+    FCONST_0(11u),
+    FCONST_1(12u),
+    FCONST_2(13u),
+    DCONST_0(14u),
+    DCONST_1(15u),
+    BIPUSH(16u),
+    SIPUSH(17u),
+    LDC(18u),
+    LDC_W(19u),
+    LDC2_W(20u),
+    ILOAD(21u),
+    LLOAD(22u),
+    FLOAD(23u),
+    DLOAD(24u),
+    ALOAD(25u),
+    ALOAD_0(0x2Au),
+    IALOAD(46u),
+    LALOAD(47u),
+    FALOAD(48u),
+    DALOAD(49u),
+    AALOAD(50u),
+    BALOAD(51u),
+    CALOAD(52u),
+    SALOAD(53u),
+    ISTORE(54u),
+    LSTORE(55u),
+    FSTORE(56u),
+    DSTORE(57u),
+    ASTORE(58u),
+    IASTORE(79u),
+    LASTORE(80u),
+    FASTORE(81u),
+    DASTORE(82u),
+    AASTORE(83u),
+    BASTORE(84u),
+    CASTORE(85u),
+    SASTORE(86u),
+    POP(87u),
+    POP2(88u),
+    DUP(89u),
+    DUP_X1(90u),
+    DUP_X2(91u),
+    DUP2(92u),
+    DUP2_X1(93u),
+    DUP2_X2(94u),
+    SWAP(95u),
+    IADD(96u),
+    LADD(97u),
+    FADD(98u),
+    DADD(99u),
+    ISUB(100u),
+    LSUB(101u),
+    FSUB(102u),
+    DSUB(103u),
+    IMUL(104u),
+    LMUL(105u),
+    FMUL(106u),
+    DMUL(107u),
+    IDIV(108u),
+    LDIV(109u),
+    FDIV(110u),
+    DDIV(111u),
+    IREM(112u),
+    LREM(113u),
+    FREM(114u),
+    DREM(115u),
+    INEG(116u),
+    LNEG(117u),
+    FNEG(118u),
+    DNEG(119u),
+    ISHL(120u),
+    LSHL(121u),
+    ISHR(122u),
+    LSHR(123u),
+    IUSHR(124u),
+    LUSHR(125u),
+    IAND(126u),
+    LAND(127u),
+    IOR(128u),
+    LOR(129u),
+    IXOR(130u),
+    LXOR(131u),
+    IINC(132u),
+    I2L(133u),
+    I2F(134u),
+    I2D(135u),
+    L2I(136u),
+    L2F(137u),
+    L2D(138u),
+    F2I(139u),
+    F2L(140u),
+    F2D(141u),
+    D2I(142u),
+    D2L(143u),
+    D2F(144u),
+    I2B(145u),
+    I2C(146u),
+    I2S(147u),
+    LCMP(148u),
+    FCMPL(149u),
+    FCMPG(150u),
+    DCMPL(151u),
+    DCMPG(152u),
+    IFEQ(153u),
+    IFNE(154u),
+    IFLT(155u),
+    IFGE(156u),
+    IFGT(157u),
+    IFLE(158u),
+    IF_ICMPEQ(159u),
+    IF_ICMPNE(160u),
+    IF_ICMPLT(161u),
+    IF_ICMPGE(162u),
+    IF_ICMPGT(163u),
+    IF_ICMPLE(164u),
+    IF_ACMPEQ(165u),
+    IF_ACMPNE(166u),
+    GOTO(167u),
+    JSR(168u),
+    RET(169u),
+    TABLESWITCH(170u),
+    LOOKUPSWITCH(171u),
+    IRETURN(172u),
+    LRETURN(173u),
+    FRETURN(174u),
+    DRETURN(175u),
+    ARETURN(176u),
+    RETURN(177u),
+    GETSTATIC(178u),
+    PUTSTATIC(179u),
+    GETFIELD(180u),
+    PUTFIELD(181u),
+    INVOKEVIRTUAL(182u),
+    INVOKESPECIAL(183u),
+    INVOKESTATIC(184u),
+    INVOKEINTERFACE(185u),
+    INVOKEDYNAMIC(186u),
+    NEW(187u),
+    NEWARRAY(188u),
+    ANEWARRAY(189u),
+    ARRAYLENGTH(190u),
+    ATHROW(191u),
+    CHECKCAST(192u),
+    INSTANCEOF(193u),
+    MONITORENTER(194u),
+    MONITOREXIT(195u),
+    MULTIANEWARRAY(197u),
+    IFNULL(198u),
+    IFNONNULL(199u)
 }

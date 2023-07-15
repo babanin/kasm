@@ -43,6 +43,12 @@ class ConstantPool(val compact: Boolean = true) : Iterable<ConstantPool.Constant
         return addEntry(CONSTANT_Methodref_info(clsIndex, nameAndTypeIdx))
     }
 
+    fun writeFieldRef(cls: String, name: String, type: String): UShort {
+        val clsIndex = writeClass(cls)
+        val nameAndTypeIdx = writeNameAndType(name, type)
+        return addEntry(CONSTANT_Fieldref_info(clsIndex, nameAndTypeIdx))
+    }
+
     fun writeUtf8(value: String): UShort {
         if (compact) {
             entries.forEachIndexed { idx, it ->
@@ -53,6 +59,10 @@ class ConstantPool(val compact: Boolean = true) : Iterable<ConstantPool.Constant
         }
 
         return addEntry(CONSTANT_Utf8_info(value))
+    }
+
+    fun writeString(value: String): UShort {
+        return addEntry(CONSTANT_String_info(writeUtf8(value)))
     }
 
     fun readUtf8(idx: UShort): String? {
@@ -89,6 +99,17 @@ class ConstantPool(val compact: Boolean = true) : Iterable<ConstantPool.Constant
         }
     }
 
+    data class CONSTANT_Fieldref_info(val clsIndex: UShort, val nameAndTypeIdx: UShort) :
+        ConstantPoolEntry(Tag.CONSTANT_Fieldref) {
+        override fun toByteArray(): ByteArray {
+            return DynamicByteArray().apply {
+                putU1(Tag.CONSTANT_Fieldref.code)
+                putU2(clsIndex.toUInt())
+                putU2(nameAndTypeIdx.toUInt())
+            }.toByteArray()
+        }
+    }
+
     data class CONSTANT_NameAndType(val nameIndex: UShort, val typeIndex: UShort) :
         ConstantPoolEntry(Tag.CONSTANT_NameAndType) {
         override fun toByteArray(): ByteArray {
@@ -96,6 +117,15 @@ class ConstantPool(val compact: Boolean = true) : Iterable<ConstantPool.Constant
                 putU1(Tag.CONSTANT_NameAndType.code)
                 putU2(nameIndex)
                 putU2(typeIndex)
+            }.toByteArray()
+        }
+    }
+
+    data class CONSTANT_String_info(val stringIndex: UShort) : ConstantPoolEntry(Tag.CONSTANT_String) {
+        override fun toByteArray(): ByteArray {
+            return DynamicByteArray().apply {
+                putU1(Tag.CONSTANT_String.code)
+                putU2(stringIndex)
             }.toByteArray()
         }
     }
