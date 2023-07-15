@@ -13,6 +13,9 @@ class InstructionBuilder(val code: ByteCode) {
         operands += (idx.toInt() shr 8 and 255).toUByte()
         operands += (idx.toInt() and 255).toUByte()
     }
+    
+    val size : Int
+        get() = 1 + operands.size
 
     override fun toString(): String {
         return "InstructionBuilder(code=$code, operands=$operands)"

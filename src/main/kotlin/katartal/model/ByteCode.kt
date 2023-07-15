@@ -1,34 +1,41 @@
 package katartal.model
 
 // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html.
-enum class ByteCode(val opcode: UByte) {
+enum class ByteCode(val opcode: UByte, val stackChange: Int = 0) {
     NOP(0u),
     ACONST_NULL(1u),
     ICONST_M1(2u),
-    ICONST_0(3u),
-    ICONST_1(4u),
-    ICONST_2(5u),
-    ICONST_3(6u),
-    ICONST_4(7u),
-    ICONST_5(8u),
-    LCONST_0(9u),
-    LCONST_1(10u),
-    FCONST_0(11u),
-    FCONST_1(12u),
-    FCONST_2(13u),
-    DCONST_0(14u),
-    DCONST_1(15u),
+    ICONST_0(3u, stackChange = 1),
+    ICONST_1(4u, stackChange = 1),
+    ICONST_2(5u, stackChange = 1),
+    ICONST_3(6u, stackChange = 1),
+    ICONST_4(7u, stackChange = 1),
+    ICONST_5(8u, stackChange = 1),
+    LCONST_0(9u, stackChange = 1),
+    LCONST_1(10u, stackChange = 1),
+    FCONST_0(11u, stackChange = 1),
+    FCONST_1(12u, stackChange = 1),
+    FCONST_2(13u, stackChange = 1),
+    DCONST_0(14u, stackChange = 1),
+    DCONST_1(15u, stackChange = 1),
     BIPUSH(16u),
     SIPUSH(17u),
     LDC(18u),
     LDC_W(19u),
     LDC2_W(20u),
-    ILOAD(21u),
+    ILOAD(0x15u),
     LLOAD(22u),
     FLOAD(23u),
     DLOAD(24u),
     ALOAD(25u),
-    ALOAD_0(0x2Au),
+    ILOAD_0(0x1Au, stackChange = 1), // 26
+    ILOAD_1(0x1Bu, stackChange = 1), // 27
+    ILOAD_2(0x1Cu, stackChange = 1), // 28
+    ILOAD_3(0x1Eu, stackChange = 1), // 29
+    ALOAD_0(0x2Au, stackChange = 1), // 30
+    ALOAD_1(0x2Bu, stackChange = 1), // 31
+    ALOAD_2(0x2Cu, stackChange = 1), // 32
+    ALOAD_3(0x2Du, stackChange = 1), // 33
     IALOAD(46u),
     LALOAD(47u),
     FALOAD(48u),
@@ -41,7 +48,17 @@ enum class ByteCode(val opcode: UByte) {
     LSTORE(55u),
     FSTORE(56u),
     DSTORE(57u),
-    ASTORE(58u),
+    ASTORE(0x3Au), // 58
+    ISTORE_0(0x3Bu), // 59
+    ISTORE_1(0x3Cu), // 60
+    ISTORE_2(0x3Du, stackChange = -1), // 61
+    ISTORE_3(0x3Eu), // 62
+    
+    
+    ASTORE_0(0x4Bu), // 75
+    ASTORE_1(0x4Cu), // 76
+    ASTORE_2(0x4Du), // 77
+    ASTORE_3(0x4Eu), // 78
     IASTORE(79u),
     LASTORE(80u),
     FASTORE(81u),
@@ -63,7 +80,7 @@ enum class ByteCode(val opcode: UByte) {
     LADD(97u),
     FADD(98u),
     DADD(99u),
-    ISUB(100u),
+    ISUB(100u, stackChange = -1),
     LSUB(101u),
     FSUB(102u),
     DSUB(103u),
@@ -75,7 +92,7 @@ enum class ByteCode(val opcode: UByte) {
     LDIV(109u),
     FDIV(110u),
     DDIV(111u),
-    IREM(112u),
+    IREM(112u, stackChange = -1),
     LREM(113u),
     FREM(114u),
     DREM(115u),

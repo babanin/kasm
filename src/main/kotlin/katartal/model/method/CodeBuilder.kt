@@ -69,6 +69,26 @@ class CodeBuilder(
         }
     }
 
+    fun _if(code: ByteCode, subRoutine: CodeBuilder.() -> Unit): List<InstructionBuilder> {
+        val codeBuilder = CodeBuilder(constantPool = constantPool)
+        codeBuilder.subRoutine()
+
+        val prevCodeLength = instructions.fold(0) { acc, inst -> acc + inst.size }
+        val codeLength = codeBuilder.instructions.fold(0) { acc, inst -> acc + inst.size }
+        
+        val ifInst = _instruction(code) {
+            _referenceU2((prevCodeLength + 1 + codeLength).toUShort())
+        }
+        
+        instructions += codeBuilder.instructions
+        this.maxStack = max(maxStack, codeBuilder.maxStack)
+
+        val inst = mutableListOf<InstructionBuilder>()
+        inst += ifInst
+        inst += codeBuilder.instructions
+        return inst 
+    }
+
     fun _instruction(code: ByteCode, init: InstructionBuilder.() -> Unit): InstructionBuilder {
         val builder = InstructionBuilder(code)
         builder.init()

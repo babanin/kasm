@@ -7,6 +7,7 @@ fun <T> Class<T>.path(): String {
 
 private val PRIMITIVES = mapOf<Class<*>, String>(
     Integer::class.java to "I",
+    Int::class.java to "I",
     Boolean::class.java to "Z",
     Character::class.java to "C",
     Long::class.java to "L",

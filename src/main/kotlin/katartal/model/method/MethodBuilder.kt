@@ -43,8 +43,8 @@ class MethodBuilder(
         descriptorCpIndex = constantPool.writeUtf8("${parametersDescriptor}V")
     }
 
-    fun _code(init: CodeBuilder.() -> Unit): CodeBuilder {
-        val codeBuilder = CodeBuilder(maxLocals = parameters.size + 1, maxStack = 0, constantPool)
+    fun _code(maxLocals: Int = -1, maxStack: Int = -1, init: CodeBuilder.() -> Unit): CodeBuilder {
+        val codeBuilder = CodeBuilder(maxLocals = if(maxLocals == -1) parameters.size + 1 else maxLocals, maxStack, constantPool)
         codeBuilders += codeBuilder
         codeBuilder.init()
         return codeBuilder
@@ -82,6 +82,8 @@ class MethodBuilder(
             for (operand in instruction.operands) {
                 codeArray.putU1(operand)
             }
+
+            println("${instruction.code} ${instruction.operands.filter { it != 0.toUByte() }.joinToString(" ")}")
         }
 
         attributes += CodeAttribute(
