@@ -1,8 +1,7 @@
 package katartal.generators.plain
 
 import katartal.generators.ClassGenerator
-import katartal.model.ClassBuilder
-import katartal.model.CodeAttribute
+import katartal.model.cls.CommonClassBuilder
 import katartal.util.DynamicByteArray
 
 class PlainClassGenerator : ClassGenerator {
@@ -27,7 +26,7 @@ class PlainClassGenerator : ClassGenerator {
      *     attribute_info attributes[attributes_count];
      * }
      */
-    override fun toByteArray(clsBuilder: ClassBuilder): ByteArray {
+    override fun toByteArray(clsBuilder: CommonClassBuilder<*>): ByteArray {
         val cls = DynamicByteArray()
         cls.putU4(0xCAFEBABEu)
         cls.putU2(0u) // minor version

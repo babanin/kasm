@@ -1,7 +1,11 @@
-package katartal.model
+package katartal.model.method
 
+import katartal.model.Attribute
+import katartal.model.CodeAttribute
+import katartal.model.ConstantPool
 import katartal.util.DynamicByteArray
 import katartal.util.descriptor
+import katartal.util.path
 
 class MethodBuilder(
     name: String = "<init>",
@@ -29,19 +33,14 @@ class MethodBuilder(
         parametersDescriptor =
             parameters
                 .map { it.second }
-                .map {
+                .joinToString("", "(", ")") {
                     when (it) {
                         is Class<*> -> it.descriptor()
                         else -> it.toString()
                     }
-                }.joinToString(";", "(", ";)")
+                }
 
         descriptorCpIndex = constantPool.writeUtf8("${parametersDescriptor}V")
-    }
-
-    fun <T> Class<T>.path(): String {
-        val pkg = this.`package`
-        return pkg.name.replace(".", "/") + "/" + this.simpleName
     }
 
     fun _code(init: CodeBuilder.() -> Unit): CodeBuilder {
