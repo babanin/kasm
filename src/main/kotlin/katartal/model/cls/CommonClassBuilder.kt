@@ -1,7 +1,7 @@
 package katartal.model.cls
 
 import katartal.model.ConstantPool
-import katartal.model.FieldBuilder
+import katartal.model.field.FieldBuilder
 import katartal.model.JavaVersion
 import katartal.model.method.MethodAccess
 import katartal.model.method.MethodBuilder

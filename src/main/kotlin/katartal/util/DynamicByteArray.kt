@@ -1,5 +1,8 @@
 package katartal.util
 
+/**
+ * Big-endian dynamic byte array
+ */
 class DynamicByteArray {
     private var store = ByteArray(1024)
     private var pointer = 0
