@@ -101,7 +101,13 @@ class CodeBuilder(
         instructions.add(builder)
         return builder
     }
-
+    
+    fun _mathOperation(operation: ByteCode, a: ByteCode, b: ByteCode) {
+        _instruction(a)
+        _instruction(b)
+        _instruction(operation)        
+    }
+    
     fun _nop(): InstructionBuilder {
         return _instruction(ByteCode.NOP)
     }

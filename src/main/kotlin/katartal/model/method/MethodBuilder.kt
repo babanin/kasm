@@ -1,8 +1,6 @@
 package katartal.model.method
 
-import katartal.model.Attribute
-import katartal.model.CodeAttribute
-import katartal.model.ConstantPool
+import katartal.model.*
 import katartal.util.DynamicByteArray
 import katartal.util.descriptor
 import katartal.util.path
@@ -43,8 +41,13 @@ class MethodBuilder(
         descriptorCpIndex = constantPool.writeUtf8("${parametersDescriptor}V")
     }
 
+    fun _locals() {
+        
+    }
+    
     fun _code(maxLocals: Int = -1, maxStack: Int = -1, init: CodeBuilder.() -> Unit): CodeBuilder {
-        val codeBuilder = CodeBuilder(maxLocals = if(maxLocals == -1) parameters.size + 1 else maxLocals, maxStack, constantPool)
+        val codeBuilder =
+            CodeBuilder(maxLocals = if (maxLocals == -1) parameters.size + 1 else maxLocals, maxStack, constantPool)
         codeBuilders += codeBuilder
         codeBuilder.init()
         return codeBuilder
@@ -74,8 +77,6 @@ class MethodBuilder(
             if (codeBuilders.isEmpty()) _code { _return() }
             else codeBuilders.reduce { acc, codeBuilder -> acc + codeBuilder }
 
-        val attributeNameIndex = constantPool.writeUtf8("Code")
-
         val codeArray = DynamicByteArray()
         for (instruction in codeBuilder.instructions) {
             codeArray.putU1(instruction.code.opcode)
@@ -87,10 +88,42 @@ class MethodBuilder(
         }
 
         attributes += CodeAttribute(
-            attributeNameIndex,
+            constantPool.writeUtf8("Code"),
             codeBuilder.maxStack.toUShort(),
-            (1 + parameters.size + codeBuilder.maxLocals).toUShort(),
+            (parameters.size + codeBuilder.maxLocals).toUShort(),
             codeArray.toByteArray()
+        )
+
+        val localVarsTable = parameters.mapIndexed { index, pair ->
+            LocalVariableTableEntry(
+                1,
+                codeArray.size,
+                constantPool.writeUtf8(pair.first),
+                constantPool.writeUtf8(
+                    when (pair.second) {
+                        is Class<*> -> (pair.second as Class<*>).descriptor()
+                        else -> pair.second.toString()
+                    }
+                ),
+                index
+            )
+        }.toMutableList()
+        
+        localVarsTable.add(
+            LocalVariableTableEntry(
+                1, codeArray.size, constantPool.writeUtf8("result"), constantPool.writeUtf8("[Ljava/lang/String;"), 1
+            )
+        )
+        
+        localVarsTable.add(
+            LocalVariableTableEntry(
+                1, codeArray.size, constantPool.writeUtf8("i"), constantPool.writeUtf8("I"), 2
+            )
+        )
+        
+        attributes += LocalVariableTable(
+            constantPool.writeUtf8("LocalVariableTable"),
+            localVarsTable
         )
     }
 }

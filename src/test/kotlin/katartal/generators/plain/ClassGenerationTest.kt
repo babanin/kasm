@@ -160,63 +160,53 @@ class ClassGenerationTest {
     fun shouldGenerateFizzBuzz() {
         // given
         val klass = _class("Test") {
-            _method("fizzBuzz", listOf("count" to Int::class.java), PUBLIC) {
-                _code(maxLocals = 4 , maxStack = 4) {
+            _method("fizzBuzz", listOf("count" to Int::class.java), PUBLIC + STATIC) {
+                _code(maxLocals = 3 , maxStack = 3) {
                     // String[] result = new String[count]
                     _instruction(ByteCode.ILOAD_0)
                     _instruction(ByteCode.ANEWARRAY) {
-                        _referenceU2(constantPool.writeClass(" java/lang/String"))
+                        _referenceU2(constantPool.writeClass("java/lang/String"))
                     }
                     _instruction(ByteCode.ASTORE_1)
-                    
-                    // i = 1
-                    _instruction(ByteCode.ICONST_1)
-                    _instruction(ByteCode.ISTORE_2)
-                    
+
                     _instruction(ByteCode.ILOAD_2) // i
                     _instruction(ByteCode.ILOAD_0) // count
 
                     // if(i % 3 == 0 & i % 5 == 0)
                     _if(ByteCode.IF_ICMPGT) {
                         // i % 3 
-                        _instruction(ByteCode.ILOAD_2)
-                        _instruction(ByteCode.ICONST_3)
-                        _instruction(ByteCode.IREM)
+                        _mathOperation(ByteCode.IREM, ByteCode.ILOAD_2, ByteCode.ICONST_5)
                         _instruction(ByteCode.IFNE) {
                             _referenceU2(34u) // 
                         }
                         // i % 3 
-                        _instruction(ByteCode.ILOAD_2)
-                        _instruction(ByteCode.ICONST_5)
-                        _instruction(ByteCode.IREM)
+                        _mathOperation(ByteCode.IREM, ByteCode.ILOAD_2, ByteCode.ICONST_5)
                         _instruction(ByteCode.IFNE) {
                             _referenceU2(34u) // 
                         }
+                        
                         // then
                         _instruction(ByteCode.ALOAD_1)
-                        _instruction(ByteCode.ILOAD_2)
-                        _instruction(ByteCode.ICONST_1)
-                        _instruction(ByteCode.ISUB)
+                        _mathOperation(ByteCode.ISUB, ByteCode.ILOAD_2, ByteCode.ICONST_1)
                         _ldc("FizzBuzz")
                         _instruction(ByteCode.AASTORE)
                     }
 
                     // else if(i % 3) 
-                    _instruction(ByteCode.ILOAD_2)
-                    _instruction(ByteCode.ICONST_3)
-                    _instruction(ByteCode.IREM)
+                    _mathOperation(ByteCode.IREM, ByteCode.ILOAD_2, ByteCode.ICONST_3)
                     _if(ByteCode.IFNE) {
                         _instruction(ByteCode.IFNE) {
                             _referenceU2(50u) // 
                         }
-                        
+
                         _instruction(ByteCode.ALOAD_1)
-                        _instruction(ByteCode.ILOAD_2)
-                        _instruction(ByteCode.ICONST_1)
-                        _instruction(ByteCode.ISUB)
+                        _mathOperation(ByteCode.ISUB, ByteCode.ILOAD_2, ByteCode.ICONST_1)
                         _ldc("Fizz")
                         _instruction(ByteCode.AASTORE)
                     }
+
+                    _instruction(ByteCode.ALOAD_1)
+                    _instruction(ByteCode.ARETURN)
                 }
             } returns Array<String>::class.java
         } 
@@ -235,7 +225,7 @@ class ClassGenerationTest {
             .hasMethods("fizzBuzz")
 
         val fizzBuzzMethod = toClass.getDeclaredMethod("fizzBuzz", Int::class.java)
-        val result : Array<String> = fizzBuzzMethod.invoke(15) as Array<String>
+        val result : Array<String> = fizzBuzzMethod.invoke(null, 15) as Array<String>
         Assertions.assertThat(result)
             .contains("Fizz", "Buzz", "FizzBuzz")
     }

@@ -83,7 +83,7 @@ class ConstantPool(val compact: Boolean = true) : Iterable<ConstantPool.Constant
         entries.add(entry)
         return entries.size.toUShort()
     }
-
+    
     sealed class ConstantPoolEntry(val tag: Tag) {
         abstract fun toByteArray(): ByteArray
     }
