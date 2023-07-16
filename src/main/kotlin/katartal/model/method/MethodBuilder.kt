@@ -47,7 +47,11 @@ class MethodBuilder(
 
     fun _code(maxLocals: Int = -1, maxStack: Int = -1, init: CodeBuilder.() -> Unit): CodeBuilder {
         val codeBuilder =
-            CodeBuilder(maxLocals = if (maxLocals == -1) parameters.size + 1 else maxLocals, maxStack, constantPool)
+            CodeBuilder(
+                maxLocals = if (maxLocals == -1) parameters.size + 1 else maxLocals,
+                maxStack,
+                constantPool = constantPool
+            )
         codeBuilders += codeBuilder
         codeBuilder.init()
         return codeBuilder
@@ -75,6 +79,28 @@ class MethodBuilder(
     fun flush() {
         attributes += buildCodeAttribute()
         attributes += buildLocalVariableTable()
+        attributes += buildStackMapFrameTable()
+    }
+
+    private fun buildStackMapFrameTable(): StackMapTableAttribute {
+        val entries = mutableListOf<StackMapFrame>()
+
+        entries += append_frame(
+            6u,
+            listOf(
+                Object_variable_info(CPoolIndex(constantPool.writeClass("[I"))),
+                Integer_variable_info()
+            )
+        )
+        entries += chop_frame(1u, 14u)
+
+        println("StackMapTable:")
+        entries.forEach {
+            println("\tframe_type=${it.frameType} $it")
+        }
+        println()
+
+        return StackMapTableAttribute(constantPool.writeUtf8("StackMapTable"), entries)
     }
 
     private fun buildCodeAttribute(): CodeAttribute {
@@ -82,6 +108,9 @@ class MethodBuilder(
             if (codeBuilders.isEmpty()) _code { _return() }
             else codeBuilders.reduce { acc, codeBuilder -> acc + codeBuilder }
 
+        var position = 0
+
+        println("Code: ")
         val codeArray = DynamicByteArray()
         for (instruction in codeBuilder.instructions) {
             codeArray.putU1(instruction.code.opcode)
@@ -89,8 +118,14 @@ class MethodBuilder(
                 codeArray.putU1(operand)
             }
 
-            println("${instruction.code} ${instruction.operands.filter { it != 0.toUByte() }.joinToString(" ")}")
+            println(
+                "\t$position\t${instruction.code}\t${
+                    instruction.operands.joinToString("\t")
+                }"
+            )
+            position += (1 + instruction.operands.size)
         }
+        println()
 
         return CodeAttribute(
             constantPool.writeUtf8("Code"),
@@ -107,7 +142,7 @@ class MethodBuilder(
 
         val localVarsTable = parameters.mapIndexed { index, pair ->
             LocalVariableTableEntry(
-                1u,
+                0u,
                 codeBuilder.currentPos,
                 constantPool.writeUtf8(pair.first),
                 constantPool.writeUtf8(
@@ -125,6 +160,13 @@ class MethodBuilder(
                 it.startPc, it.length, it.nameIndex, it.descriptor, (i + localVarsTable.size).toUShort()
             )
         }
+
+        println("LocalVariableTable: ")
+        println("\tStart\t\tLength\t\tSlot\t\tName\t\tSignature")
+        localVarsTable.forEach {
+            println("\t${it.startPc}\t\t\t${it.length}\t\t\t${it.index}\t\t\t${it.nameIndex}\t\t\t${it.descriptorIndex}")
+        }
+        println()
 
         return LocalVariableTable(
             constantPool.writeUtf8("LocalVariableTable"),

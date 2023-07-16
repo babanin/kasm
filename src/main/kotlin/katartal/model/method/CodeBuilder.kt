@@ -9,6 +9,7 @@ import kotlin.math.max
 class CodeBuilder(
     var maxLocals: Int = -1,
     var maxStack: Int = -1,
+    val initialOffset: UShort = 0u,
     private val constantPool: ConstantPool
 ) {
     val instructions = mutableListOf<InstructionBuilder>()
@@ -70,14 +71,15 @@ class CodeBuilder(
     }
 
     fun _if(code: ByteCode, subRoutine: CodeBuilder.() -> Unit): List<InstructionBuilder> {
-        val codeBuilder = CodeBuilder(constantPool = constantPool)
+        val ifItself : UByte = (1u + 2u).toUByte()
+        
+        val codeBuilder = CodeBuilder(initialOffset = (currentPos + ifItself).toUShort(), constantPool = constantPool)
         codeBuilder.subRoutine()
 
-        val prevCodeLength = currentPos
-        val codeLength = codeBuilder.currentPos
+        val codeLength = codeBuilder.size
 
         val ifInst = _instruction(code) {
-            _referenceU2((prevCodeLength + 1u + codeLength).toUShort())
+            _referenceU2((ifItself + codeLength).toUShort())
         }
 
         instructions += codeBuilder.instructions
@@ -90,6 +92,9 @@ class CodeBuilder(
     }
 
     val currentPos: UShort
+        get() = (initialOffset + size).toUShort()
+    
+    val size: UShort
         get() = instructions.fold(0) { acc, inst -> acc + inst.size }.toUShort()
 
     fun label(): Label {
@@ -143,7 +148,7 @@ class CodeBuilder(
 
     fun _goto(label: Label): InstructionBuilder {
         return _instruction(ByteCode.GOTO) {
-            _position(label.position)
+            _position((label.position.toInt() - currentPos.toInt()).toShort())
         }
     }
 

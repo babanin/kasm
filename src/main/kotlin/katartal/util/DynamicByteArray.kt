@@ -3,9 +3,13 @@ package katartal.util
 /**
  * Big-endian dynamic byte array
  */
-class DynamicByteArray {
-    private var store = ByteArray(1024)
+class DynamicByteArray(preallocate: Int = 1024) {
+    private var store: ByteArray
     private var pointer = 0
+
+    init {
+        store = ByteArray(preallocate)
+    }
 
     private fun resizeIfNeeded(expected: Int) {
         if (pointer + expected >= store.size) {

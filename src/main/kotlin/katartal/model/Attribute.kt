@@ -1,3 +1,5 @@
+@file:Suppress("EnumEntryName")
+
 package katartal.model
 
 import katartal.util.DynamicByteArray
@@ -124,42 +126,124 @@ class StackMapTableAttribute(attributeNameIndex: UShort, private val frames: Lis
         localVarAttributeArray.putU2(frames.size)
 
         for (frame in frames) {
+            localVarAttributeArray.putByteArray(frame.toByteArray())
         }
 
         return localVarAttributeArray.toByteArray()
     }
 }
 
-enum class StackMapFrameType {
-    SAME,
-    SAME_LOCALS_1_STACK_ITEM,
-    SAME_LOCALS_1_STACK_ITEM_EXTENDED,
-    CHOP,
-    SAME_FRAME_EXTENDED,
-    APPEND,
-    FULL_FRAME
+sealed class StackMapFrame(val frameType: UByte) {
+    fun toByteArray(): ByteArray {
+        val dynamicByteArray = DynamicByteArray()
+        dynamicByteArray.putU1(frameType)
+
+        writeCustomData(dynamicByteArray)
+
+        return dynamicByteArray.toByteArray()
+    }
+
+    open fun writeCustomData(dynamicByteArray: DynamicByteArray) = Unit
 }
 
-sealed class StackMapFrame(val frameType: StackMapFrameType)
-class same_frame : StackMapFrame(StackMapFrameType.SAME)
-class same_locals_1_stack_item_frame(val verificationTypeInfo: VerificationTypeInfo) :
-    StackMapFrame(StackMapFrameType.SAME_LOCALS_1_STACK_ITEM)
+class same_frame(frameType: UByte) : StackMapFrame(frameType) {
+    init {
+        if (frameType > 63u) {
+            throw IllegalStateException("same_frame is represented by tags in the range [0-63]")
+        }
+    }
+}
 
-class same_locals_1_stack_item_frame_extended(val offsetDelta: UShort, val verificationTypeInfo: VerificationTypeInfo) :
-    StackMapFrame(StackMapFrameType.SAME_LOCALS_1_STACK_ITEM_EXTENDED)
+class same_locals_1_stack_item_frame(frameType: UByte, private val verificationTypeInfo: VerificationTypeInfo) :
+    StackMapFrame(frameType) {
+    init {
+        if (frameType < 64u || frameType > 127u) {
+            throw IllegalStateException("same_locals_1_stack_item_frame is represented by tags in the range [64, 127]")
+        }
+    }
 
-class chop_frame(val offsetDelta: UShort) : StackMapFrame(StackMapFrameType.CHOP)
-class same_frame_extended(val offsetDelta: UShort) : StackMapFrame(StackMapFrameType.SAME_FRAME_EXTENDED)
-class append_frame(val offsetDelta: UShort, val locals: List<VerificationTypeInfo>) :
-    StackMapFrame(StackMapFrameType.APPEND)
+    override fun writeCustomData(dynamicByteArray: DynamicByteArray) {
+        dynamicByteArray.putU1(verificationTypeInfo.tag.code)
+    }
+}
+
+class same_locals_1_stack_item_frame_extended(
+    private val offsetDelta: UShort,
+    private val verificationTypeInfo: VerificationTypeInfo
+) :
+    StackMapFrame(247u) {
+    override fun writeCustomData(dynamicByteArray: DynamicByteArray) {
+        dynamicByteArray.putU2(offsetDelta)
+        dynamicByteArray.putU1(verificationTypeInfo.tag.code)
+    }
+}
+
+class chop_frame(k: UByte, private val offsetDelta: UShort) : StackMapFrame((251u - k).toUByte()) {
+    init {
+        if (frameType < 248u || frameType > 250u) {
+            throw IllegalStateException("chop_frame is represented by tags in the range [248-250]")
+        }
+    }
+
+    override fun writeCustomData(dynamicByteArray: DynamicByteArray) {
+        dynamicByteArray.putU2(offsetDelta)
+    }
+
+    override fun toString(): String {
+        return "chop_frame offset=${offsetDelta}"
+    }
+}
+
+class same_frame_extended(private val offsetDelta: UShort) : StackMapFrame(251u) {
+    override fun writeCustomData(dynamicByteArray: DynamicByteArray) {
+        dynamicByteArray.putU2(offsetDelta)
+    }
+}
+
+class append_frame(
+    private val offsetDelta: UShort,
+    private val locals: List<VerificationTypeInfo>
+) :
+    StackMapFrame((251 + locals.size).toUByte()) {
+
+    init {
+        if (frameType < 252u || frameType > 254u) {
+            throw IllegalStateException("append_frame is represented by tags in the range [252-254]")
+        }
+    }
+
+    override fun writeCustomData(dynamicByteArray: DynamicByteArray) {
+        dynamicByteArray.putU2(offsetDelta)
+
+        for (local in locals) {
+            dynamicByteArray.putByteArray(local.toByteArray())
+        }
+    }
+
+    override fun toString(): String {
+        return "append_frame offset=${offsetDelta} locals=${locals.joinToString { it.javaClass.simpleName }}"
+    }
+}
 
 class full_frame(
-    val offsetDelta: UShort,
-    val numberOfLocals: UShort,
-    val locals: List<VerificationTypeInfo>,
-    numberOfStackItems: UShort,
-    val stack: List<VerificationTypeInfo>
-) : StackMapFrame(StackMapFrameType.FULL_FRAME)
+    private val offsetDelta: UShort,
+    private val locals: List<VerificationTypeInfo>,
+    private val stacks: List<VerificationTypeInfo>
+) : StackMapFrame(255u) {
+    override fun writeCustomData(dynamicByteArray: DynamicByteArray) {
+        dynamicByteArray.putU2(offsetDelta)
+
+        dynamicByteArray.putU2(locals.size)
+        for (local in locals) {
+            dynamicByteArray.putByteArray(local.toByteArray())
+        }
+
+        dynamicByteArray.putU2(stacks.size)
+        for (stack in stacks) {
+            dynamicByteArray.putByteArray(stack.toByteArray())
+        }
+    }
+}
 
 enum class VerificationTypeTag(val code: UByte) {
     ITEM_Top(0u),
@@ -173,14 +257,33 @@ enum class VerificationTypeTag(val code: UByte) {
 
 }
 
-sealed class VerificationTypeInfo(val tag: VerificationTypeTag)
+sealed class VerificationTypeInfo(val tag: VerificationTypeTag) {
+    open fun toByteArray(): ByteArray {
+        return byteArrayOf(tag.code.toByte())
+    }
+}
+
 class Top_variable_info : VerificationTypeInfo(VerificationTypeTag.ITEM_Top)
 class Integer_variable_info : VerificationTypeInfo(VerificationTypeTag.ITEM_Integer)
 class Float_variable_info : VerificationTypeInfo(VerificationTypeTag.ITEM_Float)
 class Double_variable_info : VerificationTypeInfo(VerificationTypeTag.ITEM_Double)
 class Long_variable_info : VerificationTypeInfo(VerificationTypeTag.ITEM_Long)
 class Null_variable_info : VerificationTypeInfo(VerificationTypeTag.ITEM_Null)
-class UninitializedThis_variable_info(val offset: UShort) :
-    VerificationTypeInfo(VerificationTypeTag.ITEM_UninitializedThis)
+class UninitializedThis_variable_info(private val offset: UShort) :
+    VerificationTypeInfo(VerificationTypeTag.ITEM_UninitializedThis) {
+    override fun toByteArray(): ByteArray {
+        return DynamicByteArray(3).apply {
+            putU1(tag.code)
+            putU2(offset)
+        }.toByteArray()
+    }
+}
 
-class Object_variable_info(val cPoolIndex: CPoolIndex) : VerificationTypeInfo(VerificationTypeTag.ITEM_Object)
+class Object_variable_info(private val cPoolIndex: CPoolIndex) : VerificationTypeInfo(VerificationTypeTag.ITEM_Object) {
+    override fun toByteArray(): ByteArray {
+        return DynamicByteArray(3).apply {
+            putU1(tag.code)
+            putU2(cPoolIndex.index)
+        }.toByteArray()
+    }
+}

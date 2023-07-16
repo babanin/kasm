@@ -248,19 +248,41 @@ class ClassGenerationTest {
         val klass = _class("Test") {
             _method("firstNIntegers", listOf("count" to Int::class.java), PUBLIC + STATIC) {
                 _locals {
-                    
+                    _var("result", IntArray::class.java, 4u, 19u)
+                    _var("i", Int::class.java, 6u, 15u)
                 }
-                
+
                 _code(maxLocals = 3, maxStack = 3) {
                     // Locals:
                     //   0: count (parameter)
                     //   1: int[] array (result)
                     //   2: i (cycle variable)
-                    
+
                     // String[] result = new String[count]
                     _instruction(ByteCode.ILOAD_0)
                     _primitiveArray(CodeBuilder.PrimitiveArrayType.T_INT)
                     _instruction(ByteCode.ASTORE_1)
+
+                    _instruction(ByteCode.ICONST_0)
+                    _instruction(ByteCode.ISTORE_2)
+
+                    val forLabel = label()
+                    assert(forLabel.position == 6.toUShort()) { "${forLabel.position} != 6" }
+
+                    _instruction(ByteCode.ILOAD_2) // i
+                    _instruction(ByteCode.ILOAD_0) // count
+
+                    _if(ByteCode.IF_ICMPGE) {
+                        _instruction(ByteCode.ALOAD_1)
+                        _instruction(ByteCode.ILOAD_2)
+                        _instruction(ByteCode.ILOAD_2)
+                        _instruction(ByteCode.IASTORE)
+                        _instruction(ByteCode.IINC) {
+                            _index(2u)
+                            _const(1)
+                        }
+                        _goto(forLabel)
+                    }
 
                     _instruction(ByteCode.ALOAD_1)
                     _instruction(ByteCode.ARETURN)
