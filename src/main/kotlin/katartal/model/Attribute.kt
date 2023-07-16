@@ -66,20 +66,16 @@ class CodeAttribute(
             codeAttributeArray.putByteArray(subAttributeSerialized.toByteArray())
         }
 
-        val result = DynamicByteArray()
-        result.putU2(attributeNameIndex)
-        result.putU4(codeAttributeArray.size)
-        result.putByteArray(codeAttributeArray)
-        return result.toByteArray()
+        return codeAttributeArray.toByteArray()
     }
 }
 
 data class LocalVariableTableEntry(
-    val startPc: Int,
-    val length: Int,
+    val startPc: UShort,
+    val length: UShort,
     val nameIndex: UShort,
     val descriptorIndex: UShort,
-    val index: Int
+    val index: UShort
 )
 
 /**
@@ -109,11 +105,7 @@ class LocalVariableTable(attributeNameIndex: UShort, private val entries: List<L
             localVarAttributeArray.putU2(entry.index)
         }
 
-        val result = DynamicByteArray()
-        result.putU2(attributeNameIndex)
-        result.putU4(localVarAttributeArray.size)
-        result.putByteArray(localVarAttributeArray)
-        return result.toByteArray()
+        return localVarAttributeArray.toByteArray()
     }
 }
 

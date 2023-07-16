@@ -22,11 +22,14 @@ class MethodBuilder(
 
     var parametersDescriptor: String
 
+    val localsBuilder: LocalsBuilder
     val codeBuilders: MutableList<CodeBuilder> = mutableListOf()
     val attributes: MutableList<Attribute> = mutableListOf()
 
     init {
         nameCpIndex = constantPool.writeUtf8(name)
+
+        localsBuilder = LocalsBuilder(constantPool)
 
         parametersDescriptor =
             parameters
@@ -41,7 +44,7 @@ class MethodBuilder(
         descriptorCpIndex = constantPool.writeUtf8("${parametersDescriptor}V")
     }
 
-    
+
     fun _code(maxLocals: Int = -1, maxStack: Int = -1, init: CodeBuilder.() -> Unit): CodeBuilder {
         val codeBuilder =
             CodeBuilder(maxLocals = if (maxLocals == -1) parameters.size + 1 else maxLocals, maxStack, constantPool)
@@ -70,6 +73,11 @@ class MethodBuilder(
     }
 
     fun flush() {
+        attributes += buildCodeAttribute()
+        attributes += buildLocalVariableTable()
+    }
+
+    private fun buildCodeAttribute(): CodeAttribute {
         val codeBuilder =
             if (codeBuilders.isEmpty()) _code { _return() }
             else codeBuilders.reduce { acc, codeBuilder -> acc + codeBuilder }
@@ -84,17 +92,23 @@ class MethodBuilder(
             println("${instruction.code} ${instruction.operands.filter { it != 0.toUByte() }.joinToString(" ")}")
         }
 
-        attributes += CodeAttribute(
+        return CodeAttribute(
             constantPool.writeUtf8("Code"),
             codeBuilder.maxStack.toUShort(),
             (parameters.size + codeBuilder.maxLocals).toUShort(),
             codeArray.toByteArray()
         )
+    }
+
+    private fun buildLocalVariableTable(): LocalVariableTable {
+        val codeBuilder =
+            if (codeBuilders.isEmpty()) _code { _return() }
+            else codeBuilders.reduce { acc, codeBuilder -> acc + codeBuilder }
 
         val localVarsTable = parameters.mapIndexed { index, pair ->
             LocalVariableTableEntry(
-                1,
-                codeArray.size,
+                1u,
+                codeBuilder.currentPos,
                 constantPool.writeUtf8(pair.first),
                 constantPool.writeUtf8(
                     when (pair.second) {
@@ -102,25 +116,23 @@ class MethodBuilder(
                         else -> pair.second.toString()
                     }
                 ),
-                index
+                index.toUShort()
             )
         }.toMutableList()
-        
-        localVarsTable.add(
+
+        localVarsTable += localsBuilder.variables.mapIndexed { i, it ->
             LocalVariableTableEntry(
-                1, codeArray.size, constantPool.writeUtf8("result"), constantPool.writeUtf8("[Ljava/lang/String;"), 1
+                it.startPc, it.length, it.nameIndex, it.descriptor, (i + localVarsTable.size).toUShort()
             )
-        )
-        
-        localVarsTable.add(
-            LocalVariableTableEntry(
-                1, codeArray.size, constantPool.writeUtf8("i"), constantPool.writeUtf8("I"), 2
-            )
-        )
-        
-        attributes += LocalVariableTable(
+        }
+
+        return LocalVariableTable(
             constantPool.writeUtf8("LocalVariableTable"),
             localVarsTable
         )
+    }
+
+    fun _locals(function: LocalsBuilder.() -> Unit) {
+        localsBuilder.function()
     }
 }

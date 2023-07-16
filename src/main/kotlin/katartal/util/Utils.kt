@@ -27,9 +27,13 @@ fun <T> Class<T>.descriptor(): String {
             cls = cls.getComponentType()
         }
 
-        sb.append("L")
-            .append(cls.path())
-            .append(";")
+        if (cls.isPrimitive) {
+            sb.append(PRIMITIVES[cls])
+        } else {
+            sb.append("L")
+                .append(cls.path())
+                .append(";")
+        }
 
         return sb.toString()
     }

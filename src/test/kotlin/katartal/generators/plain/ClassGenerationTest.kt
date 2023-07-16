@@ -247,39 +247,25 @@ class ClassGenerationTest {
         // given
         val klass = _class("Test") {
             _method("firstNIntegers", listOf("count" to Int::class.java), PUBLIC + STATIC) {
+                _locals {
+                    
+                }
+                
                 _code(maxLocals = 3, maxStack = 3) {
                     // Locals:
                     //   0: count (parameter)
                     //   1: int[] array (result)
                     //   2: i (cycle variable)
-
+                    
                     // String[] result = new String[count]
                     _instruction(ByteCode.ILOAD_0)
                     _primitiveArray(CodeBuilder.PrimitiveArrayType.T_INT)
                     _instruction(ByteCode.ASTORE_1)
 
-                    _instruction(ByteCode.ICONST_0)
-                    _instruction(ByteCode.ISTORE_2)
-
-                    val forLabel = label()
-                    assert(forLabel.position == 6.toUShort()) { "${forLabel.position} != 6" }
-
-                    _instruction(ByteCode.ILOAD_2) // i
-                    _instruction(ByteCode.ILOAD_0) // count
-
-                    _if(ByteCode.IF_ICMPGE) {
-                        _instruction(ByteCode.ALOAD_1)
-                        _instruction(ByteCode.ILOAD_2)
-                        _instruction(ByteCode.ILOAD_2)
-                        _instruction(ByteCode.IASTORE)
-                        _instruction(ByteCode.IINC)
-                        _goto(forLabel)
-                    }
-
                     _instruction(ByteCode.ALOAD_1)
                     _instruction(ByteCode.ARETURN)
                 }
-            } returns Array<String>::class.java
+            } returns IntArray::class.java
         }
 
         // when
@@ -296,9 +282,9 @@ class ClassGenerationTest {
             .hasMethods("firstNIntegers")
 
         val fizzBuzzMethod = toClass.getDeclaredMethod("firstNIntegers", Int::class.java)
-        val result: Array<String> = fizzBuzzMethod.invoke(null, 15) as Array<String>
+        val result: IntArray = fizzBuzzMethod.invoke(null, 15) as IntArray
         Assertions.assertThat(result)
-            .contains("0", "5", "14")
+            .contains(0, 5, 14)
     }
 
     fun print(array: ByteArray) {

@@ -153,4 +153,8 @@ class CodeBuilder(
         this.maxLocals = max(maxLocals, other.maxLocals)
         return this
     }
+
+    fun _locals(function: () -> Unit) {
+        
+    }
 }
