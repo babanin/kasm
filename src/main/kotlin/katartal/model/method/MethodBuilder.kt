@@ -41,9 +41,6 @@ class MethodBuilder(
         descriptorCpIndex = constantPool.writeUtf8("${parametersDescriptor}V")
     }
 
-    fun _locals() {
-        
-    }
     
     fun _code(maxLocals: Int = -1, maxStack: Int = -1, init: CodeBuilder.() -> Unit): CodeBuilder {
         val codeBuilder =
