@@ -83,7 +83,6 @@ class MethodBuilder(
 
         attributes += buildCodeAttribute(codeBuilder)
         attributes += buildLocalVariableTable(codeBuilder)
-        attributes += buildStackMapFrameTable(codeBuilder)
     }
 
     private fun buildStackMapFrameTable(codeBuilder: CodeBuilder): StackMapTableAttribute {
@@ -152,7 +151,8 @@ class MethodBuilder(
             constantPool.writeUtf8("Code"),
             codeBuilder.maxStack.toUShort(),
             (parameters.size + codeBuilder.maxLocals).toUShort(),
-            codeArray.toByteArray()
+            codeArray.toByteArray(), 
+            attributes = listOf(buildStackMapFrameTable(codeBuilder))
         )
     }
 

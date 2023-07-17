@@ -158,12 +158,16 @@ class ClassGenerationTest {
         assertThat(toClass).isNotNull
     }
 
-
     @Test
     fun shouldGenerateFizzBuzz() {
         // given
         val klass = _class("Test") {
             _method("fizzBuzz", listOf("count" to Int::class.java), PUBLIC + STATIC) {
+                _locals {
+                    _var("result", Array<String>::class.java, 5u, 66u)
+                    _var("i", Int::class.java, 7u, 62u)
+                }
+                
                 _code(maxLocals = 3, maxStack = 3) {
                     // String[] result = new String[count]
                     _instruction(ILOAD_0)
@@ -171,43 +175,82 @@ class ClassGenerationTest {
                         _referenceU2(constantPool.writeClass("java/lang/String"))
                     }
                     _instruction(ASTORE_1)
+                    
+                    // i = 1
+                    _instruction(ICONST_1)
+                    _instruction(ISTORE_2)
 
+                    _stackFrame {
+                        _append(ObjectVar(Array<String>::class.java), IntegerVar())
+                    }
+                    
+                    val forLabel = label()
                     _instruction(ILOAD_2) // i
                     _instruction(ILOAD_0) // count
-
-                    // if(i % 3 == 0 & i % 5 == 0)
+                    
+                    // i < count
                     _if(IF_ICMPGT) {
                         // i % 3 
-                        _mathOperation(IREM, ILOAD_2, ICONST_5)
-                        _instruction(IFNE) {
-                            _referenceU2(34u) // 
-                        }
-                        // i % 3 
-                        _mathOperation(IREM, ILOAD_2, ICONST_5)
-                        _instruction(IFNE) {
-                            _referenceU2(34u) // 
+                        _mathOperation(IREM, ILOAD_2, ICONST_3)
+                        _if(IFNE) {
+                            // i % 5 
+                            _mathOperation(IREM, ILOAD_2, ICONST_5)
+                            _if(IFNE) {
+                                // then
+                                _instruction(ALOAD_1)
+                                _mathOperation(ISUB, ILOAD_2, ICONST_1)
+                                _ldc("FizzBuzz")
+                                _instruction(AASTORE)
+                                
+                                _goto(32) 
+                            }
                         }
 
-                        // then
-                        _instruction(ALOAD_1)
-                        _mathOperation(ISUB, ILOAD_2, ICONST_1)
-                        _ldc("FizzBuzz")
-                        _instruction(AASTORE)
+                        _stackFrame {
+                            _same()
+                        }
+                        
+                        // else if(i % 3) 
+                        _mathOperation(IREM, ILOAD_2, ICONST_3)
+                        _if(IFNE) {
+                            _instruction(ALOAD_1)
+                            _mathOperation(ISUB, ILOAD_2, ICONST_1)
+                            _ldc("Fizz")
+                            _instruction(AASTORE)
+
+                            _goto(16)
+                        }
+
+                        _stackFrame {
+                            _same()
+                        }
+                        
+                        // else if(i % 3) 
+                        _mathOperation(IREM, ILOAD_2, ICONST_5)
+                        _if(IFNE) {
+                            _instruction(ALOAD_1)
+                            _mathOperation(ISUB, ILOAD_2, ICONST_1)
+                            _ldc("Buzz")
+                            _instruction(AASTORE)
+                        }
+
+                        _stackFrame {
+                            _same()
+                        }
+                        
+                        // i++
+                        _instruction(IINC) {
+                            _index(2u)
+                            _const(1)
+                        }
+                        
+                        _goto(forLabel)
                     }
 
-                    // else if(i % 3) 
-                    _mathOperation(IREM, ILOAD_2, ICONST_3)
-                    _if(IFNE) {
-                        _instruction(IFNE) {
-                            _referenceU2(50u) // 
-                        }
-
-                        _instruction(ALOAD_1)
-                        _mathOperation(ISUB, ILOAD_2, ICONST_1)
-                        _ldc("Fizz")
-                        _instruction(AASTORE)
+                    _stackFrame {
+                        _chop(1)
                     }
-
+                    
                     _instruction(ALOAD_1)
                     _instruction(ARETURN)
                 }
@@ -228,8 +271,9 @@ class ClassGenerationTest {
             .hasMethods("fizzBuzz")
 
         val fizzBuzzMethod = toClass.getDeclaredMethod("fizzBuzz", Int::class.java)
-        val result: Array<String> = fizzBuzzMethod.invoke(null, 15) as Array<String>
+        val result: Array<String> = fizzBuzzMethod.invoke(null, 100) as Array<String>
         Assertions.assertThat(result)
+            .hasSize(100)
             .contains("Fizz", "Buzz", "FizzBuzz")
     }
 
@@ -254,7 +298,7 @@ class ClassGenerationTest {
                     _var("i", Int::class.java, 6u, 15u)
                 }
 
-                _code(maxLocals = 2, maxStack = 3) {
+                _code(maxLocals = 3, maxStack = 3) {
                     // Locals:
                     //   0: count (parameter)
                     //   1: int[] array (result)
@@ -265,22 +309,27 @@ class ClassGenerationTest {
                     _primitiveArray(CodeBuilder.PrimitiveArrayType.T_INT)
                     _instruction(ASTORE_1)
 
+                    // i = 0
                     _instruction(ICONST_0)
                     _instruction(ISTORE_2)
 
                     _stackFrame { 
-//                        _append(IntegerVar())
+                        _append(ObjectVar(IntArray::class.java), IntegerVar())
                     }
 
                     val forLabel = label()
+
+                    // i < count
                     _instruction(ILOAD_2) // i
                     _instruction(ILOAD_0) // count
-
                     _if(IF_ICMPGE) {
+                        // result[i] = i
                         _instruction(ALOAD_1)
                         _instruction(ILOAD_2)
                         _instruction(ILOAD_2)
                         _instruction(IASTORE)
+                              
+                        // i++
                         _instruction(IINC) {
                             _index(2u)
                             _const(1)
@@ -289,12 +338,8 @@ class ClassGenerationTest {
                         _goto(forLabel)
                     }
                     
-//                    _stackFrame {
-//                        _full(locals = listOf(ObjectVar(IntArray::class.java)))
-//                    }
-                    
-                    _stackFrame { 
-                        _same()
+                    _stackFrame {
+                        _chop(1)
                     }
                     
                     _instruction(ALOAD_1)
@@ -320,6 +365,61 @@ class ClassGenerationTest {
         val result: IntArray = fizzBuzzMethod.invoke(null, 15) as IntArray
         Assertions.assertThat(result)
             .containsExactly(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+    }
+    
+  /**
+     *     static int[] fizzBuzz(int count) {
+     *         int[] result = new int[count];
+     *
+     *         for(int i = 0; i < count; i++) {
+     *             result[i] = i;
+     *         }
+     *
+     *         return result;
+     *     }
+     */
+    @Test
+    fun shouldVerifyOdd() {
+        // given
+        val klass = _class("Test") {
+            _method("isOdd", listOf("num" to Int::class.java), PUBLIC + STATIC) {
+                _code(maxLocals = 0, maxStack = 2) {
+                    // Locals:
+                    //   0: num (parameter)
+
+                    _mathOperation(IREM, ILOAD_0, ICONST_2)
+
+                    _if(IFNE) {
+                        _instruction(ICONST_1) // i
+                        _instruction(IRETURN) // i
+                    }
+                    
+                    _stackFrame { 
+                        _same()
+                    }
+                    
+                    _instruction(ICONST_0)
+                    _instruction(IRETURN)
+                }
+            } returns Boolean::class.java
+        }
+
+        // when
+        val clsBytes = PlainClassGenerator().toByteArray(klass)
+
+        print(clsBytes)
+
+        // then
+        val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
+        val toClass = classLoader.loadClass(klass.name, clsBytes)
+
+        assertThat(toClass)
+            .isNotNull
+            .hasMethods("isOdd")
+
+        val fizzBuzzMethod = toClass.getDeclaredMethod("isOdd", Int::class.java)
+        val result = fizzBuzzMethod.invoke(null, 15) as Boolean
+        Assertions.assertThat(result).isFalse()
     }
 
     fun print(array: ByteArray) {

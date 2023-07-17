@@ -2,7 +2,6 @@ package katartal.model.method
 
 import katartal.model.ByteCode
 import katartal.model.ConstantPool
-import katartal.model.StackMapFrameAttribute
 import katartal.util.descriptor
 import katartal.util.path
 import kotlin.math.max
@@ -84,7 +83,9 @@ class CodeBuilder(
             _referenceU2((ifItself + codeLength).toUShort())
         }
 
+        frames += codeBuilder.frames
         instructions += codeBuilder.instructions
+        
         this.maxStack = max(maxStack, codeBuilder.maxStack)
 
         val inst = mutableListOf<InstructionBuilder>()
@@ -157,6 +158,12 @@ class CodeBuilder(
     fun _goto(label: Label): InstructionBuilder {
         return _instruction(ByteCode.GOTO) {
             _position((label.position.toInt() - currentPos.toInt()).toShort())
+        }
+    }
+
+    fun _goto(absolute: Short): InstructionBuilder {
+        return _instruction(ByteCode.GOTO) {
+            _position(absolute)
         }
     }
 
