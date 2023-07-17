@@ -6,12 +6,28 @@ fun <T> Class<T>.path(): String {
 }
 
 private val PRIMITIVES = mapOf<Class<*>, String>(
-    Integer::class.java to "I",
-    Boolean::class.java to "Z",
-    Character::class.java to "C",
-    Long::class.java to "L",
+    Byte::class.java to "B",
+    java.lang.Byte::class.java to "B",
+    
+    Char::class.java to "C",
+    java.lang.Character::class.java to "C",
+    
+    Double::class.java to "D",
+    java.lang.Double::class.java to "D",
+    
     Float::class.java to "F",
-    Double::class.java to "D"
+    java.lang.Float::class.java to "F",
+    
+    Int::class.java to "I",
+    java.lang.Integer::class.java to "I",
+    
+    Long::class.java to "J",
+    java.lang.Long::class.java to "J",
+    
+    Void::class.java to "V",
+    
+    Boolean::class.java to "Z",
+    java.lang.Boolean::class.java to "Z"
 )
 
 fun <T> Class<T>.descriptor(): String {
@@ -23,12 +39,16 @@ fun <T> Class<T>.descriptor(): String {
         var cls: Class<*> = this
         while (cls.isArray) {
             sb.append("[")
-            cls = cls.getComponentType()
+            cls = cls.componentType
         }
 
-        sb.append("L")
-            .append(cls.path())
-            .append(";")
+        if (cls.isPrimitive) {
+            sb.append(PRIMITIVES[cls])
+        } else {
+            sb.append("L")
+                .append(cls.path())
+                .append(";")
+        }
 
         return sb.toString()
     }

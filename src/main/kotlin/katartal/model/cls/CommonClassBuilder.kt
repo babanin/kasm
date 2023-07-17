@@ -5,8 +5,13 @@ import katartal.model.field.FieldBuilder
 import katartal.model.JavaVersion
 import katartal.model.method.MethodAccess
 import katartal.model.method.MethodBuilder
+import katartal.util.path
 
-abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(name: String, var access: ClassAccess, parent: String = "java/lang/Object") {
+abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
+    name: String,
+    var access: ClassAccess,
+    parent: String = Object::class.java.path()
+) {
     val name: String
         get() = constantPool.readClass(classNameIdx)!!
 

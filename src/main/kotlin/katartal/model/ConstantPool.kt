@@ -5,6 +5,7 @@ import katartal.util.DynamicByteArray
 @Suppress("ClassName")
 class ConstantPool(val compact: Boolean = true) : Iterable<ConstantPool.ConstantPoolEntry> {
     private val entries: MutableList<ConstantPoolEntry> = mutableListOf()
+    private val cache: MutableMap<ConstantPoolEntry, UShort> = mutableMapOf()
 
     enum class Tag(val code: UByte) {
         CONSTANT_Utf8(1u),
@@ -80,8 +81,10 @@ class ConstantPool(val compact: Boolean = true) : Iterable<ConstantPool.Constant
     }
 
     private fun addEntry(entry: ConstantPoolEntry): UShort {
-        entries.add(entry)
-        return entries.size.toUShort()
+        return cache.computeIfAbsent(entry) { e ->
+            entries.add(e)
+            entries.size.toUShort()
+        }
     }
 
     sealed class ConstantPoolEntry(val tag: Tag) {
