@@ -1,8 +1,10 @@
 package katartal.generators.plain
 
 import katartal.dsl._class
-import katartal.model.ByteCode
+import katartal.model.ByteCode.*
 import katartal.model.method.CodeBuilder
+import katartal.model.method.StackFrameBuilder.IntegerVar
+import katartal.model.method.StackFrameBuilder.ObjectVar
 import katartal.model.method.MethodAccess.Companion.PUBLIC
 import katartal.model.method.MethodAccess.Companion.STATIC
 import katartal.util.ByteArrayClassLoader
@@ -164,50 +166,50 @@ class ClassGenerationTest {
             _method("fizzBuzz", listOf("count" to Int::class.java), PUBLIC + STATIC) {
                 _code(maxLocals = 3, maxStack = 3) {
                     // String[] result = new String[count]
-                    _instruction(ByteCode.ILOAD_0)
-                    _instruction(ByteCode.ANEWARRAY) {
+                    _instruction(ILOAD_0)
+                    _instruction(ANEWARRAY) {
                         _referenceU2(constantPool.writeClass("java/lang/String"))
                     }
-                    _instruction(ByteCode.ASTORE_1)
+                    _instruction(ASTORE_1)
 
-                    _instruction(ByteCode.ILOAD_2) // i
-                    _instruction(ByteCode.ILOAD_0) // count
+                    _instruction(ILOAD_2) // i
+                    _instruction(ILOAD_0) // count
 
                     // if(i % 3 == 0 & i % 5 == 0)
-                    _if(ByteCode.IF_ICMPGT) {
+                    _if(IF_ICMPGT) {
                         // i % 3 
-                        _mathOperation(ByteCode.IREM, ByteCode.ILOAD_2, ByteCode.ICONST_5)
-                        _instruction(ByteCode.IFNE) {
+                        _mathOperation(IREM, ILOAD_2, ICONST_5)
+                        _instruction(IFNE) {
                             _referenceU2(34u) // 
                         }
                         // i % 3 
-                        _mathOperation(ByteCode.IREM, ByteCode.ILOAD_2, ByteCode.ICONST_5)
-                        _instruction(ByteCode.IFNE) {
+                        _mathOperation(IREM, ILOAD_2, ICONST_5)
+                        _instruction(IFNE) {
                             _referenceU2(34u) // 
                         }
 
                         // then
-                        _instruction(ByteCode.ALOAD_1)
-                        _mathOperation(ByteCode.ISUB, ByteCode.ILOAD_2, ByteCode.ICONST_1)
+                        _instruction(ALOAD_1)
+                        _mathOperation(ISUB, ILOAD_2, ICONST_1)
                         _ldc("FizzBuzz")
-                        _instruction(ByteCode.AASTORE)
+                        _instruction(AASTORE)
                     }
 
                     // else if(i % 3) 
-                    _mathOperation(ByteCode.IREM, ByteCode.ILOAD_2, ByteCode.ICONST_3)
-                    _if(ByteCode.IFNE) {
-                        _instruction(ByteCode.IFNE) {
+                    _mathOperation(IREM, ILOAD_2, ICONST_3)
+                    _if(IFNE) {
+                        _instruction(IFNE) {
                             _referenceU2(50u) // 
                         }
 
-                        _instruction(ByteCode.ALOAD_1)
-                        _mathOperation(ByteCode.ISUB, ByteCode.ILOAD_2, ByteCode.ICONST_1)
+                        _instruction(ALOAD_1)
+                        _mathOperation(ISUB, ILOAD_2, ICONST_1)
                         _ldc("Fizz")
-                        _instruction(ByteCode.AASTORE)
+                        _instruction(AASTORE)
                     }
 
-                    _instruction(ByteCode.ALOAD_1)
-                    _instruction(ByteCode.ARETURN)
+                    _instruction(ALOAD_1)
+                    _instruction(ARETURN)
                 }
             } returns Array<String>::class.java
         }
@@ -252,40 +254,51 @@ class ClassGenerationTest {
                     _var("i", Int::class.java, 6u, 15u)
                 }
 
-                _code(maxLocals = 3, maxStack = 3) {
+                _code(maxLocals = 2, maxStack = 3) {
                     // Locals:
                     //   0: count (parameter)
                     //   1: int[] array (result)
                     //   2: i (cycle variable)
 
                     // String[] result = new String[count]
-                    _instruction(ByteCode.ILOAD_0)
+                    _instruction(ILOAD_0)
                     _primitiveArray(CodeBuilder.PrimitiveArrayType.T_INT)
-                    _instruction(ByteCode.ASTORE_1)
+                    _instruction(ASTORE_1)
 
-                    _instruction(ByteCode.ICONST_0)
-                    _instruction(ByteCode.ISTORE_2)
+                    _instruction(ICONST_0)
+                    _instruction(ISTORE_2)
+
+                    _stackFrame { 
+//                        _append(IntegerVar())
+                    }
 
                     val forLabel = label()
-                    assert(forLabel.position == 6.toUShort()) { "${forLabel.position} != 6" }
+                    _instruction(ILOAD_2) // i
+                    _instruction(ILOAD_0) // count
 
-                    _instruction(ByteCode.ILOAD_2) // i
-                    _instruction(ByteCode.ILOAD_0) // count
-
-                    _if(ByteCode.IF_ICMPGE) {
-                        _instruction(ByteCode.ALOAD_1)
-                        _instruction(ByteCode.ILOAD_2)
-                        _instruction(ByteCode.ILOAD_2)
-                        _instruction(ByteCode.IASTORE)
-                        _instruction(ByteCode.IINC) {
+                    _if(IF_ICMPGE) {
+                        _instruction(ALOAD_1)
+                        _instruction(ILOAD_2)
+                        _instruction(ILOAD_2)
+                        _instruction(IASTORE)
+                        _instruction(IINC) {
                             _index(2u)
                             _const(1)
                         }
+                        
                         _goto(forLabel)
                     }
-
-                    _instruction(ByteCode.ALOAD_1)
-                    _instruction(ByteCode.ARETURN)
+                    
+//                    _stackFrame {
+//                        _full(locals = listOf(ObjectVar(IntArray::class.java)))
+//                    }
+                    
+                    _stackFrame { 
+                        _same()
+                    }
+                    
+                    _instruction(ALOAD_1)
+                    _instruction(ARETURN)
                 }
             } returns IntArray::class.java
         }
@@ -306,7 +319,7 @@ class ClassGenerationTest {
         val fizzBuzzMethod = toClass.getDeclaredMethod("firstNIntegers", Int::class.java)
         val result: IntArray = fizzBuzzMethod.invoke(null, 15) as IntArray
         Assertions.assertThat(result)
-            .contains(0, 5, 14)
+            .containsExactly(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
     }
 
     fun print(array: ByteArray) {

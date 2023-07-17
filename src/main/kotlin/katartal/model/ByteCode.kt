@@ -1,16 +1,67 @@
 package katartal.model
 
-// See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html.
+/**
+ * See https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-6.html
+ * https://en.wikipedia.org/wiki/List_of_Java_bytecode_instructions
+ * 
+ * Format:
+ *      [count]: [operand labels]
+ *      <description>
+ *      <stack before> → <stack after>
+ */
 enum class ByteCode(val opcode: UByte, val stackChange: Int = 0) {
     NOP(0u),
     ACONST_NULL(1u),
+    
+    /**
+     * [No parameters]
+     * Load the int value -1 onto the stack
+     * → -1
+     */
     ICONST_M1(2u),
+    
+    /**
+     * [No parameters]
+     * Load the int value 0 onto the stack
+     * → 0
+     */
     ICONST_0(3u, stackChange = 1),
+
+    /**
+     * [No parameters]
+     * Load the int value 1 onto the stack
+     * → 1
+     */
     ICONST_1(4u, stackChange = 1),
+
+    /**
+     * [No parameters]
+     * Load the int value 2 onto the stack
+     * → 2
+     */
     ICONST_2(5u, stackChange = 1),
+
+    /**
+     * [No parameters]
+     * Load the int value 3 onto the stack
+     * → 3
+     */
     ICONST_3(6u, stackChange = 1),
+
+    /**
+     * [No parameters]
+     * Load the int value 4 onto the stack
+     * → 4
+     */
     ICONST_4(7u, stackChange = 1),
+
+    /**
+     * [No parameters]
+     * Load the int value 5 onto the stack
+     * → 5
+     */
     ICONST_5(8u, stackChange = 1),
+    
     LCONST_0(9u, stackChange = 1),
     LCONST_1(10u, stackChange = 1),
     FCONST_0(11u, stackChange = 1),
@@ -32,10 +83,35 @@ enum class ByteCode(val opcode: UByte, val stackChange: Int = 0) {
     ILOAD_1(0x1Bu, stackChange = 1), // 27
     ILOAD_2(0x1Cu, stackChange = 1), // 28
     ILOAD_3(0x1Eu, stackChange = 1), // 29
+
+    /**
+     * [No parameters]
+     * Load a reference onto the stack from local variable 0
+     * → objectref
+     */
     ALOAD_0(0x2Au, stackChange = 1), // 30
+
+    /**
+     * [No parameters]
+     * Load a reference onto the stack from local variable 1
+     * → objectref
+     */
     ALOAD_1(0x2Bu, stackChange = 1), // 31
+
+    /**
+     * [No parameters]
+     * Load a reference onto the stack from local variable 2
+     * → objectref
+     */
     ALOAD_2(0x2Cu, stackChange = 1), // 32
+
+    /**
+     * [No parameters]
+     * Load a reference onto the stack from local variable 3
+     * → objectref
+     */
     ALOAD_3(0x2Du, stackChange = 1), // 33
+    
     IALOAD(46u),
     LALOAD(47u),
     FALOAD(48u),
@@ -49,17 +125,24 @@ enum class ByteCode(val opcode: UByte, val stackChange: Int = 0) {
     FSTORE(56u),
     DSTORE(57u),
     ASTORE(0x3Au), // 58
-    ISTORE_0(0x3Bu), // 59
-    ISTORE_1(0x3Cu), // 60
+    ISTORE_0(0x3Bu, stackChange = -1), // 59
+    ISTORE_1(0x3Cu, stackChange = -1), // 60
     ISTORE_2(0x3Du, stackChange = -1), // 61
-    ISTORE_3(0x3Eu), // 62
-    
-    
+    ISTORE_3(0x3Eu, stackChange = -1), // 62
+
+
     ASTORE_0(0x4Bu), // 75
     ASTORE_1(0x4Cu), // 76
     ASTORE_2(0x4Du), // 77
     ASTORE_3(0x4Eu), // 78
-    IASTORE(79u),
+
+    /**
+     * [No parameters]
+     * Store an int into an array
+     * arrayref, index, value →
+     */
+    IASTORE(79u, stackChange = -3),
+        
     LASTORE(80u),
     FASTORE(81u),
     DASTORE(82u),
@@ -112,6 +195,12 @@ enum class ByteCode(val opcode: UByte, val stackChange: Int = 0) {
     LOR(129u),
     IXOR(130u),
     LXOR(131u),
+
+    /**
+     * Parameters 2: index, const
+     * Increment local variable #index by signed byte const
+     * [No change]
+     */
     IINC(132u),
     I2L(133u),
     I2F(134u),

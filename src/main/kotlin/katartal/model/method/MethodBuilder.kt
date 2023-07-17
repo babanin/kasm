@@ -12,19 +12,20 @@ class MethodBuilder(
     val parameters: List<Pair<String, Any>> = listOf(),
     private val constantPool: ConstantPool
 ) {
-    val throws = mutableListOf<String>()
 
     val name: String
         get() = constantPool.readUtf8(nameCpIndex)!!
 
     val nameCpIndex: UShort
+    
     var descriptorCpIndex: UShort
-
-    var parametersDescriptor: String
-
-    val localsBuilder: LocalsBuilder
-    val codeBuilders: MutableList<CodeBuilder> = mutableListOf()
+    
     val attributes: MutableList<Attribute> = mutableListOf()
+
+    private val throws = mutableListOf<String>()
+    private var parametersDescriptor: String
+    private val localsBuilder: LocalsBuilder
+    private val codeBuilders: MutableList<CodeBuilder> = mutableListOf()
 
     init {
         nameCpIndex = constantPool.writeUtf8(name)
@@ -43,7 +44,6 @@ class MethodBuilder(
 
         descriptorCpIndex = constantPool.writeUtf8("${parametersDescriptor}V")
     }
-
 
     fun _code(maxLocals: Int = -1, maxStack: Int = -1, init: CodeBuilder.() -> Unit): CodeBuilder {
         val codeBuilder =
@@ -77,22 +77,47 @@ class MethodBuilder(
     }
 
     fun flush() {
-        attributes += buildCodeAttribute()
-        attributes += buildLocalVariableTable()
-        attributes += buildStackMapFrameTable()
+        val codeBuilder =
+            if (codeBuilders.isEmpty()) _code { _return() }
+            else codeBuilders.reduce { acc, codeBuilder -> acc + codeBuilder }
+
+        attributes += buildCodeAttribute(codeBuilder)
+        attributes += buildLocalVariableTable(codeBuilder)
+        attributes += buildStackMapFrameTable(codeBuilder)
     }
 
-    private fun buildStackMapFrameTable(): StackMapTableAttribute {
-        val entries = mutableListOf<StackMapFrame>()
+    private fun buildStackMapFrameTable(codeBuilder: CodeBuilder): StackMapTableAttribute {
+        val entries = mutableListOf<StackMapFrameAttribute>()
 
-        entries += append_frame(
-            6u,
-            listOf(
-                Object_variable_info(CPoolIndex(constantPool.writeClass("[I"))),
-                Integer_variable_info()
-            )
-        )
-        entries += chop_frame(1u, 14u)
+        fun mapTypes(list: List<StackFrameBuilder.Type>): List<VerificationTypeInfo> {
+            return list.map {
+                when (it) {
+                    is StackFrameBuilder.ObjectVar -> Object_variable_info(CPoolIndex(constantPool.writeClass(it.cls)))
+                    is StackFrameBuilder.IntegerVar -> Integer_variable_info()
+                    is StackFrameBuilder.TopVar -> Top_variable_info()
+                }
+            }
+        }
+
+        var lastPosition: UShort = 0u
+        for (frame in codeBuilder.frames) {
+            val offsetDelta = (frame.absoluteOffset - lastPosition).toUShort()
+
+            entries += when (frame) {
+                is StackFrameBuilder.AppendFrame -> append_frame(offsetDelta, mapTypes(frame.locals))
+                is StackFrameBuilder.FullFrame -> full_frame(offsetDelta, mapTypes(frame.locals), mapTypes(frame.stacks))
+                is StackFrameBuilder.ChopFrame -> chop_frame(offsetDelta, frame.k)
+                is StackFrameBuilder.SameFrame -> same_frame(offsetDelta.toUByte())
+            }
+
+            /*
+             The bytecode offset at which a frame applies is calculated by adding offset_delta + 1 to the bytecode 
+             offset of the previous frame, unless the previous frame is the initial frame of the method, in which case 
+             the bytecode offset is offset_delta.
+             https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-4.html#jvms-4.7.4
+             */
+            lastPosition = (frame.absoluteOffset + 1u).toUShort()
+        }
 
         println("StackMapTable:")
         entries.forEach {
@@ -103,11 +128,7 @@ class MethodBuilder(
         return StackMapTableAttribute(constantPool.writeUtf8("StackMapTable"), entries)
     }
 
-    private fun buildCodeAttribute(): CodeAttribute {
-        val codeBuilder =
-            if (codeBuilders.isEmpty()) _code { _return() }
-            else codeBuilders.reduce { acc, codeBuilder -> acc + codeBuilder }
-
+    private fun buildCodeAttribute(codeBuilder: CodeBuilder): CodeAttribute {
         var position = 0
 
         println("Code: ")
@@ -135,11 +156,7 @@ class MethodBuilder(
         )
     }
 
-    private fun buildLocalVariableTable(): LocalVariableTable {
-        val codeBuilder =
-            if (codeBuilders.isEmpty()) _code { _return() }
-            else codeBuilders.reduce { acc, codeBuilder -> acc + codeBuilder }
-
+    private fun buildLocalVariableTable(codeBuilder: CodeBuilder): LocalVariableTable {
         val localVarsTable = parameters.mapIndexed { index, pair ->
             LocalVariableTableEntry(
                 0u,
@@ -174,7 +191,7 @@ class MethodBuilder(
         )
     }
 
-    fun _locals(function: LocalsBuilder.() -> Unit) {
-        localsBuilder.function()
+    fun _locals(init: LocalsBuilder.() -> Unit) {
+        localsBuilder.init()
     }
 }

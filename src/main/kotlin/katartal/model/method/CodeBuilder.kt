@@ -2,6 +2,7 @@ package katartal.model.method
 
 import katartal.model.ByteCode
 import katartal.model.ConstantPool
+import katartal.model.StackMapFrameAttribute
 import katartal.util.descriptor
 import katartal.util.path
 import kotlin.math.max
@@ -13,6 +14,7 @@ class CodeBuilder(
     private val constantPool: ConstantPool
 ) {
     val instructions = mutableListOf<InstructionBuilder>()
+    val frames = mutableListOf<StackFrameBuilder.StackFrame>()
 
     private fun ensureStackCapacity(minStackSize: Int) {
         maxStack = max(maxStack, minStackSize)
@@ -115,6 +117,12 @@ class CodeBuilder(
         instructions.add(builder)
         return builder
     }
+        
+    fun _stackFrame(init: StackFrameBuilder.() -> Unit) {
+        val stackFrameBuilder = StackFrameBuilder(currentPos)
+        stackFrameBuilder.init()
+        frames.addAll(stackFrameBuilder.frames)
+    }
 
     @JvmInline
     value class PrimitiveArrayType(val atype: UByte) {
@@ -154,12 +162,9 @@ class CodeBuilder(
 
     operator fun plus(other: CodeBuilder): CodeBuilder {
         this.instructions += other.instructions
+        this.frames += other.frames
         this.maxStack = max(maxStack, other.maxStack)
         this.maxLocals = max(maxLocals, other.maxLocals)
         return this
-    }
-
-    fun _locals(function: () -> Unit) {
-        
     }
 }
