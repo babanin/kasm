@@ -1,5 +1,6 @@
 package katartal.model.method
 
+import katartal.model.CPoolIndex
 import katartal.model.ConstantPool
 import katartal.util.descriptor
 
@@ -7,10 +8,10 @@ class LocalsBuilder(val constantPool: ConstantPool) {
     val variables = mutableListOf<LocalVariable>()
 
     data class LocalVariable(
-        val nameIndex: UShort,
+        val nameIndex: CPoolIndex,
         val startPc: UShort,
         val length: UShort,
-        val descriptor: UShort
+        val descriptor: CPoolIndex
     )
 
     fun _var(name: String, descriptor: Class<*>, startPc: UShort, length: UShort): LocalVariable {

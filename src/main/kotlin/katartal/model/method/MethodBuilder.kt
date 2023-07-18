@@ -16,9 +16,8 @@ class MethodBuilder(
     val name: String
         get() = constantPool.readUtf8(nameCpIndex)!!
 
-    val nameCpIndex: UShort
-    
-    var descriptorCpIndex: UShort
+    val nameCpIndex: CPoolIndex    
+    var descriptorCpIndex: CPoolIndex
     
     val attributes: MutableList<Attribute> = mutableListOf()
 
@@ -91,7 +90,7 @@ class MethodBuilder(
         fun mapTypes(list: List<StackFrameBuilder.Type>): List<VerificationTypeInfo> {
             return list.map {
                 when (it) {
-                    is StackFrameBuilder.ObjectVar -> Object_variable_info(CPoolIndex(constantPool.writeClass(it.cls)))
+                    is StackFrameBuilder.ObjectVar -> Object_variable_info(constantPool.writeClass(it.cls))
                     is StackFrameBuilder.IntegerVar -> Integer_variable_info()
                     is StackFrameBuilder.TopVar -> Top_variable_info()
                 }

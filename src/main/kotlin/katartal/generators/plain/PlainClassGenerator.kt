@@ -39,12 +39,12 @@ class PlainClassGenerator : ClassGenerator {
 
         cls.putU2(clsBuilder.access.opcode) // access flags
 
-        cls.putU2(clsBuilder.classNameIdx)// this class
-        cls.putU2(clsBuilder.parentClassNameIdx) // super class
+        cls.putU2(clsBuilder.classNameIdx.toUInt())// this class
+        cls.putU2(clsBuilder.parentClassNameIdx.toUInt()) // super class
 
         cls.putU2(clsBuilder.implements.size.toUInt()) // interfaces_count
         for (interfaceIdx in clsBuilder.implements) { // interfaces
-            cls.putU2(interfaceIdx) // super class
+            cls.putU2(interfaceIdx.toUInt()) // super class
         }
 
         cls.putU2(0u) // fields_count
@@ -53,8 +53,8 @@ class PlainClassGenerator : ClassGenerator {
         cls.putU2(clsBuilder.methodBuilders.size.toUInt()) // methods_count
         for (methodBuilder in clsBuilder.methodBuilders) {
             cls.putU2(methodBuilder.access.opcode)
-            cls.putU2(methodBuilder.nameCpIndex)
-            cls.putU2(methodBuilder.descriptorCpIndex)
+            cls.putU2(methodBuilder.nameCpIndex.toUInt())
+            cls.putU2(methodBuilder.descriptorCpIndex.toUInt())
 
             val attributes = methodBuilder.attributes
             cls.putU2(attributes.size)

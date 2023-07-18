@@ -4,12 +4,12 @@ package katartal.model
 
 import katartal.util.DynamicByteArray
 
-sealed class Attribute(val attributeNameIndex: UShort) {
+sealed class Attribute(val attributeNameIndex: CPoolIndex) {
     fun toByteArray(): ByteArray {
         val attributeData = generateAttributeData()
 
         val result = DynamicByteArray()
-        result.putU2(attributeNameIndex)
+        result.putU2(attributeNameIndex.toUInt())
         result.putU4(attributeData.size)
         result.putByteArray(attributeData)
         return result.toByteArray()
@@ -39,7 +39,7 @@ data class ExceptionEntry(val startPc: Int, val endPc: Int, val handlerPc: Int, 
  * }
  */
 class CodeAttribute(
-    attributeNameIndex: UShort,
+    attributeNameIndex: CPoolIndex,
     private val maxStack: UShort,
     private val maxLocals: UShort,
     private val code: ByteArray,
@@ -75,8 +75,8 @@ class CodeAttribute(
 data class LocalVariableTableEntry(
     val startPc: UShort,
     val length: UShort,
-    val nameIndex: UShort,
-    val descriptorIndex: UShort,
+    val nameIndex: CPoolIndex,
+    val descriptorIndex: CPoolIndex,
     val index: UShort
 )
 
@@ -93,7 +93,7 @@ data class LocalVariableTableEntry(
  *     } local_variable_table[local_variable_table_length];
  * }
  */
-class LocalVariableTable(attributeNameIndex: UShort, private val entries: List<LocalVariableTableEntry>) :
+class LocalVariableTable(attributeNameIndex: CPoolIndex, private val entries: List<LocalVariableTableEntry>) :
     Attribute(attributeNameIndex) {
     override fun generateAttributeData(): ByteArray {
         val localVarAttributeArray = DynamicByteArray()
@@ -102,8 +102,8 @@ class LocalVariableTable(attributeNameIndex: UShort, private val entries: List<L
         for (entry in entries) {
             localVarAttributeArray.putU2(entry.startPc)
             localVarAttributeArray.putU2(entry.length)
-            localVarAttributeArray.putU2(entry.nameIndex)
-            localVarAttributeArray.putU2(entry.descriptorIndex)
+            localVarAttributeArray.putU2(entry.nameIndex.toUInt())
+            localVarAttributeArray.putU2(entry.descriptorIndex.toUInt())
             localVarAttributeArray.putU2(entry.index)
         }
 
@@ -119,7 +119,7 @@ class LocalVariableTable(attributeNameIndex: UShort, private val entries: List<L
  *     stack_map_frame entries[number_of_entries];
  * }
  */
-class StackMapTableAttribute(attributeNameIndex: UShort, private val frames: List<StackMapFrameAttribute>) :
+class StackMapTableAttribute(attributeNameIndex: CPoolIndex, private val frames: List<StackMapFrameAttribute>) :
     Attribute(attributeNameIndex) {
     override fun generateAttributeData(): ByteArray {
         val localVarAttributeArray = DynamicByteArray()
