@@ -1,5 +1,6 @@
 package katartal.model.cls
 
+import katartal.model.CPoolIndex
 import katartal.model.ConstantPool
 import katartal.model.field.FieldBuilder
 import katartal.model.JavaVersion
@@ -18,14 +19,14 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
     val parent: String
         get() = constantPool.readClass(parentClassNameIdx)!!
 
-    var implements: MutableList<UShort> = mutableListOf()
+    var implements: MutableList<CPoolIndex> = mutableListOf()
     val version: JavaVersion = JavaVersion.V17
 
     val fieldBuilders: MutableList<FieldBuilder> = mutableListOf()
     val methodBuilders: MutableList<MethodBuilder> = mutableListOf()
 
-    val classNameIdx: UShort
-    var parentClassNameIdx: UShort
+    val classNameIdx: CPoolIndex
+    var parentClassNameIdx: CPoolIndex
 
     val constantPool = ConstantPool()
 

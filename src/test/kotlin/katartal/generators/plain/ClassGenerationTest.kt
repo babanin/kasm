@@ -168,7 +168,7 @@ class ClassGenerationTest {
                     _var("i", Int::class.java, 7u, 62u)
                 }
                 
-                _code(maxLocals = 3, maxStack = 3) {
+                _code(maxLocals = 3) {
                     // String[] result = new String[count]
                     _instruction(ILOAD_0)
                     _instruction(ANEWARRAY) {

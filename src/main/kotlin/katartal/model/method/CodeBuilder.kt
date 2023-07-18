@@ -1,6 +1,7 @@
 package katartal.model.method
 
 import katartal.model.ByteCode
+import katartal.model.CPoolIndex
 import katartal.model.ConstantPool
 import katartal.util.descriptor
 import katartal.util.path
@@ -26,8 +27,8 @@ class CodeBuilder(
         _instruction(ByteCode.IRETURN)
     }
 
-    fun _ldc(cpIndex: UShort): InstructionBuilder {
-        if (cpIndex > 255u) {
+    fun _ldc(cpIndex: CPoolIndex): InstructionBuilder {
+        if (cpIndex.index > 255u) {
             return _instruction(ByteCode.LDC_W) {
                 _referenceU2(cpIndex)
             }

@@ -60,6 +60,27 @@ class DynamicByteArray(preallocate: Int = 1024) {
         pointer += 1
     }
 
+    fun putU8(num: Long) {
+        resizeIfNeeded(8)
+
+        store[pointer] = ((num shr 56) and 255).toByte()
+        pointer += 1
+        store[pointer] = ((num shr 48) and 255).toByte()
+        pointer += 1
+        store[pointer] = ((num shr 40) and 255).toByte()
+        pointer += 1
+        store[pointer] = ((num shr 32) and 255).toByte()
+        pointer += 1
+        store[pointer] = ((num shr 24) and 255).toByte()
+        pointer += 1
+        store[pointer] = ((num shr 16) and 255).toByte()
+        pointer += 1
+        store[pointer] = ((num shr 8) and 255).toByte()
+        pointer += 1
+        store[pointer] = (num and 255).toByte()
+        pointer += 1
+    }
+
     fun putByteArray(bytes: ByteArray) {
         resizeIfNeeded(bytes.size)
         bytes.copyInto(store, pointer)

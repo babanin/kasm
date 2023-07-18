@@ -3,9 +3,9 @@ package katartal.model
 import katartal.util.DynamicByteArray
 
 @Suppress("ClassName")
-class ConstantPool(val compact: Boolean = true) : Iterable<ConstantPool.ConstantPoolEntry> {
+class ConstantPool() : Iterable<ConstantPool.ConstantPoolEntry> {
     private val entries: MutableList<ConstantPoolEntry> = mutableListOf()
-    private val cache: MutableMap<ConstantPoolEntry, UShort> = mutableMapOf()
+    private val cache: MutableMap<ConstantPoolEntry, CPoolIndex> = mutableMapOf()
 
     enum class Tag(val code: UByte) {
         CONSTANT_Utf8(1u),
@@ -27,63 +27,71 @@ class ConstantPool(val compact: Boolean = true) : Iterable<ConstantPool.Constant
         CONSTANT_Package(20u)
     }
 
-    fun writeClass(value: String): UShort {
+    fun writeClass(value: String): CPoolIndex {
         val nameIndex = writeUtf8(value)
         return addEntry(CONSTANT_Class_info(nameIndex))
     }
 
-    fun writeNameAndType(name: String, type: String): UShort {
+    fun writeNameAndType(name: String, type: String): CPoolIndex {
         val nameIndex = writeUtf8(name)
         val typeIndex = writeUtf8(type)
         return addEntry(CONSTANT_NameAndType(nameIndex, typeIndex))
     }
 
-    fun writeMethodRef(cls: String, name: String, type: String): UShort {
+    fun writeMethodRef(cls: String, name: String, type: String): CPoolIndex {
         val clsIndex = writeClass(cls)
         val nameAndTypeIdx = writeNameAndType(name, type)
         return addEntry(CONSTANT_Methodref_info(clsIndex, nameAndTypeIdx))
     }
 
-    fun writeFieldRef(cls: String, name: String, type: String): UShort {
+    fun writeFieldRef(cls: String, name: String, type: String): CPoolIndex {
         val clsIndex = writeClass(cls)
         val nameAndTypeIdx = writeNameAndType(name, type)
         return addEntry(CONSTANT_Fieldref_info(clsIndex, nameAndTypeIdx))
     }
 
-    fun writeUtf8(value: String): UShort {
-        if (compact) {
-            entries.forEachIndexed { idx, it ->
-                if (it.tag == Tag.CONSTANT_Utf8 && (it is CONSTANT_Utf8_info) && it.value == value) {
-                    return@writeUtf8 (idx + 1).toUShort()
-                }
-            }
-        }
-
+    fun writeUtf8(value: String): CPoolIndex {
         return addEntry(CONSTANT_Utf8_info(value))
     }
 
-    fun writeString(value: String): UShort {
+    fun writeString(value: String): CPoolIndex {
         return addEntry(CONSTANT_String_info(writeUtf8(value)))
     }
+    
+    fun writeInteger(value : Int) : CPoolIndex {
+        return addEntry(CONSTANT_Integer_info(value))
+    }
+    
+    fun writeFloat(value : Float) : CPoolIndex {
+        return addEntry(CONSTANT_Float_info(value))
+    }
+    
+    fun writeLong(value : Long) : CPoolIndex {
+        return addEntry(CONSTANT_Long_info(value))
+    }
+    
+    fun writeDouble(value : Double) : CPoolIndex {
+        return addEntry(CONSTANT_Double_info(value))
+    }
 
-    fun readUtf8(idx: UShort): String? {
+    fun readUtf8(idx: CPoolIndex): String? {
         val utf8Info = entries[idx.toInt() - 1]
         if (utf8Info !is CONSTANT_Utf8_info) return null
 
         return utf8Info.value
     }
 
-    fun readClass(idx: UShort): String? {
+    fun readClass(idx: CPoolIndex): String? {
         val classInfo = entries[idx.toInt() - 1]
         if (classInfo !is CONSTANT_Class_info) return null
 
         return readUtf8(classInfo.nameIndex)
     }
 
-    private fun addEntry(entry: ConstantPoolEntry): UShort {
+    private fun addEntry(entry: ConstantPoolEntry): CPoolIndex {
         return cache.computeIfAbsent(entry) { e ->
             entries.add(e)
-            entries.size.toUShort()
+            CPoolIndex(entries.size)
         }
     }
 
@@ -91,7 +99,7 @@ class ConstantPool(val compact: Boolean = true) : Iterable<ConstantPool.Constant
         abstract fun toByteArray(): ByteArray
     }
 
-    data class CONSTANT_Methodref_info(val clsIndex: UShort, val nameAndTypeIdx: UShort) :
+    data class CONSTANT_Methodref_info(val clsIndex: CPoolIndex, val nameAndTypeIdx: CPoolIndex) :
         ConstantPoolEntry(Tag.CONSTANT_NameAndType) {
         override fun toByteArray(): ByteArray {
             return DynamicByteArray().apply {
@@ -102,7 +110,7 @@ class ConstantPool(val compact: Boolean = true) : Iterable<ConstantPool.Constant
         }
     }
 
-    data class CONSTANT_Fieldref_info(val clsIndex: UShort, val nameAndTypeIdx: UShort) :
+    data class CONSTANT_Fieldref_info(val clsIndex: CPoolIndex, val nameAndTypeIdx: CPoolIndex) :
         ConstantPoolEntry(Tag.CONSTANT_Fieldref) {
         override fun toByteArray(): ByteArray {
             return DynamicByteArray().apply {
@@ -113,31 +121,31 @@ class ConstantPool(val compact: Boolean = true) : Iterable<ConstantPool.Constant
         }
     }
 
-    data class CONSTANT_NameAndType(val nameIndex: UShort, val typeIndex: UShort) :
+    data class CONSTANT_NameAndType(val nameIndex: CPoolIndex, val typeIndex: CPoolIndex) :
         ConstantPoolEntry(Tag.CONSTANT_NameAndType) {
         override fun toByteArray(): ByteArray {
             return DynamicByteArray().apply {
                 putU1(Tag.CONSTANT_NameAndType.code)
-                putU2(nameIndex)
-                putU2(typeIndex)
+                putU2(nameIndex.toInt())
+                putU2(typeIndex.toInt())
             }.toByteArray()
         }
     }
 
-    data class CONSTANT_String_info(val stringIndex: UShort) : ConstantPoolEntry(Tag.CONSTANT_String) {
+    data class CONSTANT_String_info(val stringIndex: CPoolIndex) : ConstantPoolEntry(Tag.CONSTANT_String) {
         override fun toByteArray(): ByteArray {
             return DynamicByteArray().apply {
                 putU1(Tag.CONSTANT_String.code)
-                putU2(stringIndex)
+                putU2(stringIndex.toInt())
             }.toByteArray()
         }
     }
 
-    data class CONSTANT_Class_info(val nameIndex: UShort) : ConstantPoolEntry(Tag.CONSTANT_Class) {
+    data class CONSTANT_Class_info(val nameIndex: CPoolIndex) : ConstantPoolEntry(Tag.CONSTANT_Class) {
         override fun toByteArray(): ByteArray {
             return DynamicByteArray().apply {
                 putU1(Tag.CONSTANT_Class.code)
-                putU2(nameIndex)
+                putU2(nameIndex.toInt())
             }.toByteArray()
         }
     }
@@ -156,6 +164,44 @@ class ConstantPool(val compact: Boolean = true) : Iterable<ConstantPool.Constant
             return res
         }
 
+    }
+
+    data class CONSTANT_Integer_info (val value: Int) : ConstantPoolEntry(Tag.CONSTANT_Integer) {
+        override fun toByteArray(): ByteArray {
+            return DynamicByteArray(5).apply { 
+                putU1(Tag.CONSTANT_Integer.code)
+                putU4(value)
+            }.toByteArray()
+        }
+
+    }
+
+    data class CONSTANT_Float_info (val value: Float) : ConstantPoolEntry(Tag.CONSTANT_Float) {
+        override fun toByteArray(): ByteArray {
+            return DynamicByteArray(5).apply {
+                putU1(Tag.CONSTANT_Float.code)
+                putU4(value.toBits())
+            }.toByteArray()
+        }
+
+    }
+
+    data class CONSTANT_Long_info (val value: Long) : ConstantPoolEntry(Tag.CONSTANT_Long) {
+        override fun toByteArray(): ByteArray {
+            return DynamicByteArray(5).apply { 
+                putU1(Tag.CONSTANT_Long.code)
+                putU8(value)
+            }.toByteArray()
+        }
+    }
+
+    data class CONSTANT_Double_info (val value: Double) : ConstantPoolEntry(Tag.CONSTANT_Double) {
+        override fun toByteArray(): ByteArray {
+            return DynamicByteArray(5).apply {
+                putU1(Tag.CONSTANT_Double.code)
+                putU8(value.toBits())
+            }.toByteArray()
+        }
     }
 
     val size get() = entries.size

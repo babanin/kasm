@@ -1,6 +1,7 @@
 package katartal.model.method
 
 import katartal.model.ByteCode
+import katartal.model.CPoolIndex
 
 class InstructionBuilder(val code: ByteCode) {
     val operands = mutableListOf<UByte>()
@@ -18,7 +19,16 @@ class InstructionBuilder(val code: ByteCode) {
         operands += (idx.toInt() and 255).toUByte()
     }
 
+    fun _referenceU1(idx: CPoolIndex) {
+        operands += (idx.toInt() and 255).toUByte()
+    }
+
     fun _referenceU2(idx: UShort) {
+        operands += (idx.toInt() shr 8 and 255).toUByte()
+        operands += (idx.toInt() and 255).toUByte()
+    }
+
+    fun _referenceU2(idx: CPoolIndex) {
         operands += (idx.toInt() shr 8 and 255).toUByte()
         operands += (idx.toInt() and 255).toUByte()
     }
