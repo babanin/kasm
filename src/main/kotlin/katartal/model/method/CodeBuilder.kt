@@ -43,6 +43,11 @@ class CodeBuilder(
         return _ldc(constantPool.writeString(value))
     }
 
+
+    fun _ldc(value: Int): InstructionBuilder {
+        return _ldc(constantPool.writeInteger(value))
+    }
+
     fun _getstatic(cls: Class<*>, name: String, description: Class<*>): InstructionBuilder {
         return _instruction(ByteCode.GETSTATIC) {
             _referenceU2(constantPool.writeFieldRef(cls.path(), name, description.descriptor()))
@@ -73,8 +78,8 @@ class CodeBuilder(
     }
 
     fun _if(code: ByteCode, subRoutine: CodeBuilder.() -> Unit): List<InstructionBuilder> {
-        val ifItself : UByte = (1u + 2u).toUByte()
-        
+        val ifItself: UByte = (1u + 2u).toUByte()
+
         val codeBuilder = CodeBuilder(initialOffset = (currentPos + ifItself).toUShort(), constantPool = constantPool)
         codeBuilder.subRoutine()
 
@@ -86,7 +91,7 @@ class CodeBuilder(
 
         frames += codeBuilder.frames
         instructions += codeBuilder.instructions
-        
+
         this.maxStack = max(maxStack, codeBuilder.maxStack)
 
         val inst = mutableListOf<InstructionBuilder>()
@@ -97,15 +102,15 @@ class CodeBuilder(
 
     val currentPos: UShort
         get() = (initialOffset + size).toUShort()
-    
+
     val size: UShort
         get() = instructions.fold(0) { acc, inst -> acc + inst.size }.toUShort()
 
     fun label(): Label {
         return Label(currentPos)
     }
-    
-    data class Label(val position: UShort) 
+
+    data class Label(val position: UShort)
 
     fun _instruction(code: ByteCode, init: InstructionBuilder.() -> Unit): InstructionBuilder {
         val builder = InstructionBuilder(code)
@@ -119,7 +124,7 @@ class CodeBuilder(
         instructions.add(builder)
         return builder
     }
-        
+
     fun _stackFrame(init: StackFrameBuilder.() -> Unit) {
         val stackFrameBuilder = StackFrameBuilder(currentPos)
         stackFrameBuilder.init()

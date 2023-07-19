@@ -41,6 +41,11 @@ class InstructionBuilder(val code: ByteCode) {
         operands += num.toUByte()
     }
 
+    fun _value(num: Short) {
+        operands += (num.toInt() shr 8 and 255).toUByte()
+        operands += (num.toInt() and 255).toUByte()
+    }
+
     val size: Int
         get() = 1 + operands.size
 

@@ -4,8 +4,10 @@ import katartal.model.CPoolIndex
 import katartal.model.ConstantPool
 import katartal.model.field.FieldBuilder
 import katartal.model.JavaVersion
+import katartal.model.field.FieldAccess
 import katartal.model.method.MethodAccess
 import katartal.model.method.MethodBuilder
+import katartal.util.descriptor
 import katartal.util.path
 
 abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
@@ -53,6 +55,27 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
 
         methodBuilder.init()
         return methodBuilder
+    }
+    
+    fun _field(
+        name: String,
+        descriptor: Class<*>,
+        access: FieldAccess = FieldAccess.PUBLIC,
+        init: FieldBuilder.() -> Unit = {}
+    ) {
+        _field(name, descriptor.descriptor(), access, init)
+    }
+    
+    fun _field(
+        name: String,
+        descriptor: String,
+        access: FieldAccess = FieldAccess.PUBLIC,
+        init: FieldBuilder.() -> Unit = {}
+    ) : FieldBuilder {
+        val fieldBuilder = FieldBuilder(name, descriptor, access, constantPool)
+        fieldBuilders += fieldBuilder
+        fieldBuilder.init()
+        return fieldBuilder
     }
 
     fun flush() {

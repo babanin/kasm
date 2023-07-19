@@ -63,7 +63,14 @@ enum class ByteCode(val opcode: UByte, val stackChange: Int = 0) {
     DCONST_0(14u, stackChange = 1),
     DCONST_1(15u, stackChange = 1),
     BIPUSH(16u),
-    SIPUSH(17u),
+
+    /**
+     * Push a short onto the stack as an integer value
+     * → value
+     * @param byte1
+     * @param byte2
+     */
+    SIPUSH(17u, stackChange = 1),
     LDC(18u),
     LDC_W(19u),
     LDC2_W(20u),
@@ -346,8 +353,23 @@ enum class ByteCode(val opcode: UByte, val stackChange: Int = 0) {
     GETSTATIC(178u),
     PUTSTATIC(179u),
     GETFIELD(180u),
-    PUTFIELD(181u),
+
+    /**
+     * Set field to value in an object objectref, where the field is identified by a field reference index in constant pool
+     * objectref, value →
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    PUTFIELD(181u, stackChange = -2),
     INVOKEVIRTUAL(182u),
+
+    /**
+     * Invoke instance method on object objectref and puts the result on the stack (might be void).
+     * The method is identified by method reference index in constant pool.
+     * objectref, [arg1, arg2, ...] → result
+     * @param indexbyte1
+     * @param indexbyte2
+     */
     INVOKESPECIAL(183u),
     INVOKESTATIC(184u),
     INVOKEINTERFACE(185u),
