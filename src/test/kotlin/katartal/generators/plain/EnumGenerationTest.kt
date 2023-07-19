@@ -44,7 +44,7 @@ class EnumGenerationTest {
             _value("C") {
                 _ldc(100_000)
             }
-            
+
             _field("num", Int::class.java, FieldAccess.PRIVATE)
 
             _constructor(listOf("name" to String::class.java, "ordinal" to Int::class.java, "num" to Int::class.java)) {
@@ -57,7 +57,7 @@ class EnumGenerationTest {
                     _instruction(ByteCode.ALOAD_0)
                     _instruction(ByteCode.ILOAD_3)
                     _instruction(ByteCode.PUTFIELD) {
-                        
+
                     }
 
                     _return()
@@ -72,7 +72,34 @@ class EnumGenerationTest {
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
         val toClass = classLoader.loadClass(klass.name, clsBytes)
 
-        assertThat(toClass).isNotNull;
-        assertThat(toClass).isEnum()
+        assertThat(toClass)
+            .isNotNull
+            .isEnum()
+    }
+
+    /**
+     * public enum EWithInstanceFields {
+     *     A, B, C;
+     * }
+     */
+    @Test
+    fun shouldGenerateEmptyValidClass2() {
+        // given
+        val klass = _enum("Test") {
+            _value("A")
+            _value("B")
+            _value("C")
+        }
+
+        // when
+        val clsBytes = PlainClassGenerator().toByteArray(klass)
+
+        // then
+        val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
+        val toClass = classLoader.loadClass(klass.name, clsBytes)
+
+        assertThat(toClass)
+            .isNotNull
+            .isEnum()
     }
 }

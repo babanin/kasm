@@ -11,13 +11,10 @@ import katartal.util.descriptor
 import katartal.util.path
 
 abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
-    name: String,
+    val name: String,
     var access: ClassAccess,
     parent: String = Object::class.java.path()
 ) {
-    val name: String
-        get() = constantPool.readClass(classNameIdx)!!
-
     val parent: String
         get() = constantPool.readClass(parentClassNameIdx)!!
 
@@ -38,7 +35,7 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
     }
 
     fun _constructor(parameters: List<Pair<String, Any>> = listOf(), init: MethodBuilder.() -> Unit): MethodBuilder {
-        val methodBuilder = MethodBuilder(ctr = true, parameters = parameters, constantPool = constantPool)
+        val methodBuilder = MethodBuilder(ctr = true, parameters = parameters, constantPool = constantPool, currentClass = name)
         methodBuilders.add(methodBuilder)
         methodBuilder.init()
         return methodBuilder
@@ -50,7 +47,7 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
         access: MethodAccess = MethodAccess.PUBLIC,
         init: MethodBuilder.() -> Unit
     ): MethodBuilder {
-        val methodBuilder = MethodBuilder(name, access, parameters = parameters, constantPool = constantPool)
+        val methodBuilder = MethodBuilder(name, access, parameters = parameters, constantPool = constantPool, currentClass = name)
         methodBuilders.add(methodBuilder)
 
         methodBuilder.init()
@@ -78,7 +75,7 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
         return fieldBuilder
     }
 
-    fun flush() {
+    open fun flush() {
         methodBuilders.forEach { it.flush() }
         fieldBuilders.forEach { it.flush() }
     }

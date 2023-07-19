@@ -3,10 +3,10 @@ package katartal.generators.plain
 import katartal.dsl._class
 import katartal.model.ByteCode.*
 import katartal.model.method.CodeBuilder
-import katartal.model.method.StackFrameBuilder.IntegerVar
-import katartal.model.method.StackFrameBuilder.ObjectVar
 import katartal.model.method.MethodAccess.Companion.PUBLIC
 import katartal.model.method.MethodAccess.Companion.STATIC
+import katartal.model.method.StackFrameBuilder.IntegerVar
+import katartal.model.method.StackFrameBuilder.ObjectVar
 import katartal.util.ByteArrayClassLoader
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
@@ -163,19 +163,19 @@ class ClassGenerationTest {
         // given
         val klass = _class("Test") {
             _method("fizzBuzz", listOf("count" to Int::class.java), PUBLIC + STATIC) {
-                _locals {
-                    _var("result", Array<String>::class.java, 5u, 66u)
-                    _var("i", Int::class.java, 7u, 62u)
-                }
+//                _var("result", Array<String>::class.java, 5u, 66u)
+//                _var("i", Int::class.java, 7u, 62u)
                 
                 _code(maxLocals = 3) {
                     // String[] result = new String[count]
                     _instruction(ILOAD_0)
                     _instruction(ANEWARRAY) {
-                        _referenceU2(constantPool.writeClass("java/lang/String"))
+                        _indexU2(constantPool.writeClass("java/lang/String"))
                     }
+
+                    val result = variable("result", Array<String>::class.java)
                     _instruction(ASTORE_1)
-                    
+
                     // i = 1
                     _instruction(ICONST_1)
                     _instruction(ISTORE_2)
@@ -183,11 +183,13 @@ class ClassGenerationTest {
                     _stackFrame {
                         _append(ObjectVar(Array<String>::class.java), IntegerVar())
                     }
+
+                    label("for")
                     
-                    val forLabel = label()
+                    val i = variable("i", "I")
                     _instruction(ILOAD_2) // i
                     _instruction(ILOAD_0) // count
-                    
+
                     // i < count
                     _if(IF_ICMPGT) {
                         // i % 3 
@@ -201,16 +203,17 @@ class ClassGenerationTest {
                                 _mathOperation(ISUB, ILOAD_2, ICONST_1)
                                 _ldc("FizzBuzz")
                                 _instruction(AASTORE)
-                                
-                                _goto(32) 
+
+                                _goto("i++")
                             }
                         }
 
                         _stackFrame {
                             _same()
                         }
-                        
+
                         // else if(i % 3) 
+                        label("i%3")
                         _mathOperation(IREM, ILOAD_2, ICONST_3)
                         _if(IFNE) {
                             _instruction(ALOAD_1)
@@ -218,14 +221,14 @@ class ClassGenerationTest {
                             _ldc("Fizz")
                             _instruction(AASTORE)
 
-                            _goto(16)
+                            _goto("i++")
                         }
 
                         _stackFrame {
                             _same()
                         }
-                        
-                        // else if(i % 3) 
+
+                        // else if(i % 5) 
                         _mathOperation(IREM, ILOAD_2, ICONST_5)
                         _if(IFNE) {
                             _instruction(ALOAD_1)
@@ -237,22 +240,26 @@ class ClassGenerationTest {
                         _stackFrame {
                             _same()
                         }
-                        
+
                         // i++
+                        label("i++")
                         _instruction(IINC) {
                             _index(2u)
                             _const(1)
                         }
-                        
-                        _goto(forLabel)
+
+                        _goto("for")
                     }
 
+                    releaseVariable(i)
                     _stackFrame {
                         _chop(1)
                     }
-                    
+
                     _instruction(ALOAD_1)
                     _instruction(ARETURN)
+                    
+                    releaseVariable(result)
                 }
             } returns Array<String>::class.java
         }
@@ -293,10 +300,8 @@ class ClassGenerationTest {
         // given
         val klass = _class("Test") {
             _method("firstNIntegers", listOf("count" to Int::class.java), PUBLIC + STATIC) {
-                _locals {
-                    _var("result", IntArray::class.java, 4u, 19u)
-                    _var("i", Int::class.java, 6u, 15u)
-                }
+                _var("result", IntArray::class.java, 4u, 19u)
+                _var("i", Int::class.java, 6u, 15u)
 
                 _code(maxLocals = 3, maxStack = 3) {
                     // Locals:
@@ -313,11 +318,11 @@ class ClassGenerationTest {
                     _instruction(ICONST_0)
                     _instruction(ISTORE_2)
 
-                    _stackFrame { 
+                    _stackFrame {
                         _append(ObjectVar(IntArray::class.java), IntegerVar())
                     }
 
-                    val forLabel = label()
+                    val forLabel = label("forLabel")
 
                     // i < count
                     _instruction(ILOAD_2) // i
@@ -328,20 +333,20 @@ class ClassGenerationTest {
                         _instruction(ILOAD_2)
                         _instruction(ILOAD_2)
                         _instruction(IASTORE)
-                              
+
                         // i++
                         _instruction(IINC) {
                             _index(2u)
                             _const(1)
                         }
-                        
-                        _goto(forLabel)
+
+                        _goto("forLabel")
                     }
-                    
+
                     _stackFrame {
                         _chop(1)
                     }
-                    
+
                     _instruction(ALOAD_1)
                     _instruction(ARETURN)
                 }
@@ -366,8 +371,8 @@ class ClassGenerationTest {
         Assertions.assertThat(result)
             .containsExactly(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
     }
-    
-  /**
+
+    /**
      *     static int[] fizzBuzz(int count) {
      *         int[] result = new int[count];
      *
@@ -393,11 +398,11 @@ class ClassGenerationTest {
                         _instruction(ICONST_1) // i
                         _instruction(IRETURN) // i
                     }
-                    
-                    _stackFrame { 
+
+                    _stackFrame {
                         _same()
                     }
-                    
+
                     _instruction(ICONST_0)
                     _instruction(IRETURN)
                 }

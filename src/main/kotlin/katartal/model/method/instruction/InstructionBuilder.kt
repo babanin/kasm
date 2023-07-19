@@ -1,9 +1,9 @@
-package katartal.model.method
+package katartal.model.method.instruction
 
 import katartal.model.ByteCode
 import katartal.model.CPoolIndex
 
-class InstructionBuilder(val code: ByteCode) {
+sealed class InstructionBuilder(val code: ByteCode) {
     val operands = mutableListOf<UByte>()
 
     fun _atype(type: UByte) {
@@ -15,20 +15,20 @@ class InstructionBuilder(val code: ByteCode) {
         operands += (position.toInt() and 255).toUByte()
     }
 
-    fun _referenceU1(idx: UShort) {
+    fun _indexU1(idx: UShort) {
         operands += (idx.toInt() and 255).toUByte()
     }
 
-    fun _referenceU1(idx: CPoolIndex) {
+    fun _indexU1(idx: CPoolIndex) {
         operands += (idx.toInt() and 255).toUByte()
     }
 
-    fun _referenceU2(idx: UShort) {
+    fun _indexU2(idx: UShort) {
         operands += (idx.toInt() shr 8 and 255).toUByte()
         operands += (idx.toInt() and 255).toUByte()
     }
 
-    fun _referenceU2(idx: CPoolIndex) {
+    fun _indexU2(idx: CPoolIndex) {
         operands += (idx.toInt() shr 8 and 255).toUByte()
         operands += (idx.toInt() and 255).toUByte()
     }
@@ -46,10 +46,20 @@ class InstructionBuilder(val code: ByteCode) {
         operands += (num.toInt() and 255).toUByte()
     }
 
-    val size: Int
+    open val size: Int
         get() = 1 + operands.size
 
-    override fun toString(): String {
-        return "InstructionBuilder(code=$code, operands=$operands)"
+    override fun toString(): String = "InstructionBuilder(code=$code, operands=$operands)"
+
+    open fun flush() = Unit
+
+    companion object {
+        fun eager(code: ByteCode): EagerInstructionBuilder {
+            return EagerInstructionBuilder(code)
+        }
+
+        fun lazy(code: ByteCode, reserve: Int, evaluator: LazyInstructionBuilder.() -> Unit): LazyInstructionBuilder {
+            return LazyInstructionBuilder(code, reserve, evaluator)
+        }
     }
 }

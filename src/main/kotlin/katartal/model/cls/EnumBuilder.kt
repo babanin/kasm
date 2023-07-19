@@ -1,6 +1,12 @@
 package katartal.model.cls
 
+import katartal.model.field.FieldAccess
+import katartal.model.field.FieldAccess.Companion.ENUM
+import katartal.model.field.FieldAccess.Companion.FINAL
+import katartal.model.field.FieldAccess.Companion.PUBLIC
+import katartal.model.field.FieldAccess.Companion.STATIC
 import katartal.model.method.CodeBuilder
+import katartal.model.method.MethodAccess
 import katartal.util.path
 
 class EnumBuilder(name: String, access: ClassAccess) : CommonClassBuilder<EnumBuilder>(name, access + ClassAccess.ENUM, "java/lang/Enum") {
@@ -14,7 +20,15 @@ class EnumBuilder(name: String, access: ClassAccess) : CommonClassBuilder<EnumBu
         return this
     }
     
-    fun _value(name :String, ctrCode: CodeBuilder.() -> Unit) {
+    fun _value(name :String, ctrCode: CodeBuilder.() -> Unit = {}) {
+        _field(name, "L${name};", PUBLIC + STATIC + FINAL + ENUM)
+    }
+    
+    override fun flush() {
+        _method("<cinit>", access = MethodAccess.STATIC) {
+            
+        }
         
+        super.flush()
     }
 }
