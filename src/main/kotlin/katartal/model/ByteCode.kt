@@ -11,7 +11,7 @@ package katartal.model
  */
 enum class ByteCode(
     val opcode: UByte,
-    val stackChange: Int = Int.MIN_VALUE,
+    val stackChange: Int = 0,
     val expectedParameters: Int = 0
 ) {
     /**
@@ -490,7 +490,12 @@ enum class ByteCode(
 
     POP(87u),
     POP2(88u),
-    DUP(89u),
+
+    /**
+     * Duplicate the value on top of the stack
+     * value → value, value
+     */
+    DUP(0x59u, stackChange = 1), // 89
     DUP_X1(90u),
     DUP_X2(91u),
     DUP2(92u),
@@ -616,8 +621,21 @@ enum class ByteCode(
     DRETURN(175u),
     ARETURN(176u),
     RETURN(177u),
-    GETSTATIC(178u),
-    PUTSTATIC(179u),
+
+    /**
+     * Get a static field value of a class, where the field is identified by field reference in the constant pool index
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    GETSTATIC(178u, stackChange = 1, expectedParameters = 2),
+
+    /**
+     * Set static field to value in a class, where the field is identified by a field reference index in constant pool
+     * value →
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    PUTSTATIC(0xB3u, stackChange = -1, expectedParameters = 2), // 179
     GETFIELD(180u),
 
     /**
@@ -636,11 +654,25 @@ enum class ByteCode(
      * @param indexbyte1
      * @param indexbyte2
      */
-    INVOKESPECIAL(183u, expectedParameters = 2),
-    INVOKESTATIC(184u),
+    INVOKESPECIAL(0xB7u, expectedParameters = 2), // 183
+
+    /**
+     * Invoke a static method and puts the result on the stack (might be void); 
+     * the method is identified by method reference index in constant pool
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    INVOKESTATIC(0xB8u, expectedParameters = 2), // 184
     INVOKEINTERFACE(185u),
     INVOKEDYNAMIC(186u),
-    NEW(187u),
+
+    /**
+     * Create new object of type identified by class reference in constant pool index
+     * → objectref
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    NEW(0xBBu), // 187
 
     /**
      * Create new array with count elements of primitive type identified by atype
@@ -648,10 +680,24 @@ enum class ByteCode(
      * @param 1: atype
      */
     NEWARRAY(188u, expectedParameters = 1),
+
+    /**
+     * Create a new array of references of length count and component type identified by the class reference index
+     * count → arrayref
+     * @param indexbyte1
+     * @param indexbyte2
+     */
     ANEWARRAY(189u),
     ARRAYLENGTH(190u),
     ATHROW(191u),
-    CHECKCAST(192u),
+
+    /**
+     * Checks whether an objectref is of a certain type, the class reference of which is in the constant pool at index
+     * objectref → objectref
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    CHECKCAST(0xC0u), // 192
     INSTANCEOF(193u),
     MONITORENTER(194u),
     MONITOREXIT(195u),

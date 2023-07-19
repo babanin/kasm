@@ -4,6 +4,7 @@ import katartal.model.CPoolIndex
 import katartal.model.ConstantPool
 import katartal.model.attribute.*
 import katartal.model.method.MethodAccess.Companion.STATIC
+import katartal.model.method.instruction.InstructionBuilder
 import katartal.util.DynamicByteArray
 import katartal.util.descriptor
 import katartal.util.path
@@ -19,6 +20,9 @@ class MethodBuilder(
 
     val name: String
         get() = constantPool.readUtf8(nameCpIndex)!!
+
+    val descriptor: String
+        get() = constantPool.readUtf8(descriptorCpIndex)!!
 
     val nameCpIndex: CPoolIndex
     var descriptorCpIndex: CPoolIndex
@@ -72,7 +76,7 @@ class MethodBuilder(
         codeBuilder.init()
         return codeBuilder
     }
-
+    
     infix fun returns(returnCls: String): MethodBuilder {
         descriptorCpIndex = constantPool.writeUtf8("${parametersDescriptor}$returnCls")
         return this
@@ -236,4 +240,9 @@ class MethodBuilder(
             localVarsTable
         )
     }
+
+    override fun toString(): String {
+        return "$currentClass.$name$descriptor"
+    }
+
 }

@@ -7,6 +7,9 @@ import katartal.model.method.MethodAccess.Companion.PUBLIC
 import katartal.model.method.MethodAccess.Companion.STATIC
 import katartal.model.method.StackFrameBuilder.IntegerVar
 import katartal.model.method.StackFrameBuilder.ObjectVar
+import katartal.model.method.plugins.branching._if
+import katartal.model.method.plugins.lvt.releaseVariable
+import katartal.model.method.plugins.lvt.variable
 import katartal.util.ByteArrayClassLoader
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
@@ -24,7 +27,7 @@ class ClassGenerationTest {
 
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
-        val toClass = classLoader.loadClass(klass.name, clsBytes)
+        val toClass = classLoader.loadClass(klass.className, clsBytes)
 
         assertThat(toClass)
             .isNotNull
@@ -40,7 +43,7 @@ class ClassGenerationTest {
 
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
-        val toClass = classLoader.loadClass(klass.name, clsBytes)
+        val toClass = classLoader.loadClass(klass.className, clsBytes)
 
         assertThat(toClass)
             .isNotNull
@@ -57,7 +60,7 @@ class ClassGenerationTest {
 
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
-        val toClass = classLoader.loadClass(klass.name, clsBytes)
+        val toClass = classLoader.loadClass(klass.className, clsBytes)
 
         assertThat(toClass)
             .isNotNull
@@ -81,7 +84,7 @@ class ClassGenerationTest {
 
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
-        val toClass = classLoader.loadClass(klass.name, clsBytes)
+        val toClass = classLoader.loadClass(klass.className, clsBytes)
 
         assertThat(toClass)
             .isNotNull
@@ -104,7 +107,7 @@ class ClassGenerationTest {
 
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
-        val toClass = classLoader.loadClass(klass.name, clsBytes)
+        val toClass = classLoader.loadClass(klass.className, clsBytes)
 
         assertThat(toClass)
             .isNotNull
@@ -127,7 +130,7 @@ class ClassGenerationTest {
 
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
-        val toClass = classLoader.loadClass(klass.name, clsBytes)
+        val toClass = classLoader.loadClass(klass.className, clsBytes)
 
         assertThat(toClass).isNotNull
     }
@@ -153,7 +156,7 @@ class ClassGenerationTest {
 
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
-        val toClass = classLoader.loadClass(klass.name, clsBytes)
+        val toClass = classLoader.loadClass(klass.className, clsBytes)
 
         assertThat(toClass).isNotNull
     }
@@ -166,7 +169,7 @@ class ClassGenerationTest {
 //                _var("result", Array<String>::class.java, 5u, 66u)
 //                _var("i", Int::class.java, 7u, 62u)
                 
-                _code(maxLocals = 3) {
+                _code {
                     // String[] result = new String[count]
                     _instruction(ILOAD_0)
                     _instruction(ANEWARRAY) {
@@ -174,92 +177,34 @@ class ClassGenerationTest {
                     }
 
                     val result = variable("result", Array<String>::class.java)
-                    _instruction(ASTORE_1)
+                    _instruction(ASTORE_2)
+                    
+                    _instruction(ALOAD_2)
+                    _instruction(ICONST_0)
+                    _ldc("Fizz")
+                    _instruction(AASTORE)
+                    
+                    _instruction(ALOAD_2)
+                    _instruction(ICONST_1)
+                    _ldc("FizzBuzz")
+                    _instruction(AASTORE)
+                    
+                    _instruction(ALOAD_2)
+                    _instruction(ICONST_2)
+                    _ldc("Buzz")
+                    _instruction(AASTORE)
 
                     // i = 1
-                    _instruction(ICONST_1)
-                    _instruction(ISTORE_2)
-
-                    _stackFrame {
-                        _append(ObjectVar(Array<String>::class.java), IntegerVar())
-                    }
-
-                    label("for")
-                    
                     val i = variable("i", "I")
-                    _instruction(ILOAD_2) // i
-                    _instruction(ILOAD_0) // count
-
-                    // i < count
-                    _if(IF_ICMPGT) {
-                        // i % 3 
-                        _mathOperation(IREM, ILOAD_2, ICONST_3)
-                        _if(IFNE) {
-                            // i % 5 
-                            _mathOperation(IREM, ILOAD_2, ICONST_5)
-                            _if(IFNE) {
-                                // then
-                                _instruction(ALOAD_1)
-                                _mathOperation(ISUB, ILOAD_2, ICONST_1)
-                                _ldc("FizzBuzz")
-                                _instruction(AASTORE)
-
-                                _goto("i++")
-                            }
-                        }
-
-                        _stackFrame {
-                            _same()
-                        }
-
-                        // else if(i % 3) 
-                        label("i%3")
-                        _mathOperation(IREM, ILOAD_2, ICONST_3)
-                        _if(IFNE) {
-                            _instruction(ALOAD_1)
-                            _mathOperation(ISUB, ILOAD_2, ICONST_1)
-                            _ldc("Fizz")
-                            _instruction(AASTORE)
-
-                            _goto("i++")
-                        }
-
-                        _stackFrame {
-                            _same()
-                        }
-
-                        // else if(i % 5) 
-                        _mathOperation(IREM, ILOAD_2, ICONST_5)
-                        _if(IFNE) {
-                            _instruction(ALOAD_1)
-                            _mathOperation(ISUB, ILOAD_2, ICONST_1)
-                            _ldc("Buzz")
-                            _instruction(AASTORE)
-                        }
-
-                        _stackFrame {
-                            _same()
-                        }
-
-                        // i++
-                        label("i++")
-                        _instruction(IINC) {
-                            _index(2u)
-                            _const(1)
-                        }
-
-                        _goto("for")
-                    }
+                    _instruction(ICONST_1)
+                    _instruction(ISTORE_1)
 
                     releaseVariable(i)
-                    _stackFrame {
-                        _chop(1)
-                    }
 
-                    _instruction(ALOAD_1)
+                    _instruction(ALOAD_2)
                     _instruction(ARETURN)
                     
-                    releaseVariable(result)
+//                    releaseVariable(result)
                 }
             } returns Array<String>::class.java
         }
@@ -271,7 +216,7 @@ class ClassGenerationTest {
 
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
-        val toClass = classLoader.loadClass(klass.name, clsBytes)
+        val toClass = classLoader.loadClass(klass.className, clsBytes)
 
         assertThat(toClass)
             .isNotNull
@@ -360,7 +305,7 @@ class ClassGenerationTest {
 
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
-        val toClass = classLoader.loadClass(klass.name, clsBytes)
+        val toClass = classLoader.loadClass(klass.className, clsBytes)
 
         assertThat(toClass)
             .isNotNull
@@ -416,7 +361,7 @@ class ClassGenerationTest {
 
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
-        val toClass = classLoader.loadClass(klass.name, clsBytes)
+        val toClass = classLoader.loadClass(klass.className, clsBytes)
 
         assertThat(toClass)
             .isNotNull

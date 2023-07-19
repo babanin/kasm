@@ -38,9 +38,20 @@ class ConstantPool : Iterable<ConstantPool.ConstantPoolEntry> {
         return addEntry(CONSTANT_NameAndType(nameIndex, typeIndex))
     }
 
+    fun writeNameAndType(name: String, typeIndex: CPoolIndex): CPoolIndex {
+        val nameIndex = writeUtf8(name)
+        return addEntry(CONSTANT_NameAndType(nameIndex, typeIndex))
+    }
+
     fun writeMethodRef(cls: String, name: String, type: String): CPoolIndex {
         val clsIndex = writeClass(cls)
         val nameAndTypeIdx = writeNameAndType(name, type)
+        return addEntry(CONSTANT_Methodref_info(clsIndex, nameAndTypeIdx))
+    }
+
+    fun writeMethodRef(cls: String, name: String, typeIndex: CPoolIndex): CPoolIndex {
+        val clsIndex = writeClass(cls)
+        val nameAndTypeIdx = writeNameAndType(name, typeIndex)
         return addEntry(CONSTANT_Methodref_info(clsIndex, nameAndTypeIdx))
     }
 

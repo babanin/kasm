@@ -13,9 +13,9 @@ class CodeBuilder(
     var maxLocals: Int = -1,
     var maxStack: Int = -1,
     private val initialOffset: UShort = 0u,
-    private val labels: MutableMap<String, Label>,
-    private val variables: MutableList<LocalVariable>,
-    private val constantPool: ConstantPool
+    internal val labels: MutableMap<String, Label>,
+    internal val variables: MutableList<LocalVariable>,
+    internal val constantPool: ConstantPool
 ) {
     val instructions = mutableListOf<InstructionBuilder>()
     val frames = mutableListOf<StackFrameBuilder.StackFrame>()
@@ -58,6 +58,12 @@ class CodeBuilder(
         }
     }
 
+    fun _getstatic(cls: String, name: String, description: String): InstructionBuilder {
+        return _instruction(ByteCode.GETSTATIC) {
+            _indexU2(constantPool.writeFieldRef(cls, name, description))
+        }
+    }
+
     fun _return(): InstructionBuilder {
         return _instruction(ByteCode.RETURN)
     }
@@ -79,31 +85,6 @@ class CodeBuilder(
         return _instruction(ByteCode.INVOKEVIRTUAL) {
             _indexU2(constantPool.writeMethodRef(cls.path(), method, description))
         }
-    }
-
-    fun _if(code: ByteCode, subRoutine: CodeBuilder.() -> Unit): List<InstructionBuilder> {
-        val ifItself: UByte = (1u + 2u).toUByte()
-
-        val codeBuilder = CodeBuilder(
-            initialOffset = (currentPos + ifItself).toUShort(),
-            constantPool = constantPool,
-            labels = labels,
-            variables = variables
-        )
-        codeBuilder.subRoutine()
-
-        val codeLength = codeBuilder.size
-
-        val ifInst = _instruction(code) {
-            _indexU2((ifItself + codeLength).toUShort())
-        }
-
-        this.plus(codeBuilder)
-
-        val inst = mutableListOf<InstructionBuilder>()
-        inst += ifInst
-        inst += codeBuilder.instructions
-        return inst
     }
 
     val currentPos: UShort
@@ -175,10 +156,6 @@ class CodeBuilder(
         _instruction(operation)
     }
 
-    fun _nop(): InstructionBuilder {
-        return _instruction(ByteCode.NOP)
-    }
-
     fun _goto(label: Label): InstructionBuilder {
         return _instruction(ByteCode.GOTO) {
             _position((label.position.toInt() - currentPos.toInt()).toShort())
@@ -210,24 +187,21 @@ class CodeBuilder(
         }
     }
 
-    fun variable(name: String, descriptor: Class<*>): CodeVariable {
-        return variable(name, descriptor.descriptor())    
-    }
-    
-    fun variable(name: String, descriptor: String): CodeVariable {
-        return CodeVariable(name, descriptor, currentPos)
-    }
-
-    fun releaseVariable(variable: CodeVariable) {
-        variables += LocalVariable(
-            constantPool.writeUtf8(variable.name),
-            variable.startPc,
-            (currentPos - variable.startPc).toUShort(),
-            constantPool.writeUtf8(variable.descriptor)
-        )
+    fun _iconst(num: Int): InstructionBuilder {
+        return when (num) {
+            -1 -> _instruction(ByteCode.ICONST_M1)
+            0 -> _instruction(ByteCode.ICONST_0)
+            1 -> _instruction(ByteCode.ICONST_1)
+            2 -> _instruction(ByteCode.ICONST_2)
+            3 -> _instruction(ByteCode.ICONST_3)
+            4 -> _instruction(ByteCode.ICONST_4)
+            5 -> _instruction(ByteCode.ICONST_5)
+            in 5..255 -> _instruction(ByteCode.BIPUSH) { _const(num.toByte()) }
+            in 256..65535 -> _instruction(ByteCode.SIPUSH) { _value(num.toShort()) }
+            else -> _instruction(ByteCode.LDC) { _indexU2(constantPool.writeInteger(num)) }
+        }
     }
 
-    data class CodeVariable(val name: String, val descriptor: String, val startPc: UShort)
 
     operator fun plus(other: CodeBuilder): CodeBuilder {
         this.instructions += other.instructions
@@ -238,8 +212,13 @@ class CodeBuilder(
     }
 
     fun flush() {
+        var stackSize = 0
         for (instruction in instructions) {
             instruction.flush()
+            stackSize += instruction.code.stackChange
+            this.maxStack = max(maxStack, stackSize)
         }
+        
+        println("Max stack ${maxStack}")
     }
 }

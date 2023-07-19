@@ -2,16 +2,16 @@ package katartal.model.cls
 
 import katartal.model.CPoolIndex
 import katartal.model.ConstantPool
-import katartal.model.field.FieldBuilder
 import katartal.model.JavaVersion
 import katartal.model.field.FieldAccess
+import katartal.model.field.FieldBuilder
 import katartal.model.method.MethodAccess
 import katartal.model.method.MethodBuilder
 import katartal.util.descriptor
 import katartal.util.path
 
 abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
-    val name: String,
+    val className: String,
     var access: ClassAccess,
     parent: String = Object::class.java.path()
 ) {
@@ -30,12 +30,17 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
     val constantPool = ConstantPool()
 
     init {
-        this.classNameIdx = constantPool.writeClass(name)
+        this.classNameIdx = constantPool.writeClass(className)
         this.parentClassNameIdx = constantPool.writeClass(parent)
     }
 
-    fun _constructor(parameters: List<Pair<String, Any>> = listOf(), init: MethodBuilder.() -> Unit): MethodBuilder {
-        val methodBuilder = MethodBuilder(ctr = true, parameters = parameters, constantPool = constantPool, currentClass = name)
+    fun _constructor(
+        parameters: List<Pair<String, Any>> = listOf(),
+        access: MethodAccess = MethodAccess.PUBLIC,
+        init: MethodBuilder.() -> Unit
+    ): MethodBuilder {
+        val methodBuilder =
+            MethodBuilder(ctr = true, parameters = parameters, constantPool = constantPool, currentClass = className, access = access)
         methodBuilders.add(methodBuilder)
         methodBuilder.init()
         return methodBuilder
@@ -47,13 +52,14 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
         access: MethodAccess = MethodAccess.PUBLIC,
         init: MethodBuilder.() -> Unit
     ): MethodBuilder {
-        val methodBuilder = MethodBuilder(name, access, parameters = parameters, constantPool = constantPool, currentClass = name)
+        val methodBuilder =
+            MethodBuilder(name, access, parameters = parameters, constantPool = constantPool, currentClass = name)
         methodBuilders.add(methodBuilder)
 
         methodBuilder.init()
         return methodBuilder
     }
-    
+
     fun _field(
         name: String,
         descriptor: Class<*>,
@@ -62,13 +68,13 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
     ) {
         _field(name, descriptor.descriptor(), access, init)
     }
-    
+
     fun _field(
         name: String,
         descriptor: String,
         access: FieldAccess = FieldAccess.PUBLIC,
         init: FieldBuilder.() -> Unit = {}
-    ) : FieldBuilder {
+    ): FieldBuilder {
         val fieldBuilder = FieldBuilder(name, descriptor, access, constantPool)
         fieldBuilders += fieldBuilder
         fieldBuilder.init()

@@ -7,11 +7,75 @@ import katartal.model.field.FieldAccess
 import katartal.util.ByteArrayClassLoader
 import org.junit.jupiter.api.Test
 import util.assertThat
+import java.io.File
+import java.io.FileOutputStream
 
 class EnumGenerationTest {
+    /**
+     *public enum EmptyEnum {
+     *}
+     */
+    @Test
+    fun shouldGenerateEmptyValidEnum() {
+        // given
+        val klass = _enum("EmptyEnum")
+
+        // when
+        val clsBytes = PlainClassGenerator().toByteArray(klass)
+
+        // then
+        val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
+        val toClass = classLoader.loadClass(klass.className, clsBytes)
+
+        assertThat(toClass)
+            .isNotNull
+            .isEnum()
+    }
+
+    fun print(array: ByteArray) {
+        val fop = FileOutputStream(File("Test.class"))
+        fop.write(array)
+        fop.close()
+    }
 
     /**
-     * public enum EWithInstanceFields {
+     * public enum EnumWithPlainValues {
+     *     A, B, C, D;
+     * }
+     */
+    @Test
+    fun shouldGenerateEnumWithPlainValues() {
+        // given
+        val klass = _enum("EnumWithPlainValues") {
+            _value("A")
+            _value("B")
+            _value("C")
+            _value("D")
+        }
+
+        // when
+        val clsBytes = PlainClassGenerator().toByteArray(klass)
+        
+        print(clsBytes)
+
+        // then
+        val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
+        val toClass = classLoader.loadClass(klass.className, clsBytes)
+
+        assertThat(toClass)
+            .isNotNull
+            .isEnum()
+            .hasDeclaredFields("A", "B", "C", "D")
+
+        val valuesMethod = toClass.getDeclaredMethod("values")
+        var result = valuesMethod.invoke(null) as Iterable<*>
+        for (any in result) {
+            println(any)
+        }
+    }
+
+    /**
+     * public enum EnumWithFields {
      *     A(1000), B(10000), C(100000);
      *
      *     private final int num;
@@ -26,9 +90,9 @@ class EnumGenerationTest {
      * }
      */
     @Test
-    fun shouldGenerateEmptyValidClass() {
+    fun shouldGenerateEnumWithFields() {
         // given
-        val klass = _enum("Test") {
+        val klass = _enum("EnumWithFields") {
             _value("A") {
                 _instruction(SIPUSH) {
                     _value(1000)
@@ -70,33 +134,7 @@ class EnumGenerationTest {
 
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
-        val toClass = classLoader.loadClass(klass.name, clsBytes)
-
-        assertThat(toClass)
-            .isNotNull
-            .isEnum()
-    }
-
-    /**
-     * public enum EWithInstanceFields {
-     *     A, B, C;
-     * }
-     */
-    @Test
-    fun shouldGenerateEmptyValidClass2() {
-        // given
-        val klass = _enum("Test") {
-            _value("A")
-            _value("B")
-            _value("C")
-        }
-
-        // when
-        val clsBytes = PlainClassGenerator().toByteArray(klass)
-
-        // then
-        val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
-        val toClass = classLoader.loadClass(klass.name, clsBytes)
+        val toClass = classLoader.loadClass(klass.className, clsBytes)
 
         assertThat(toClass)
             .isNotNull

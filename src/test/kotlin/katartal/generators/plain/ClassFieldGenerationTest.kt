@@ -31,7 +31,7 @@ class ClassFieldGenerationTest {
         
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
-        val loadedClass = classLoader.loadClass(klass.name, clsBytes)
+        val loadedClass = classLoader.loadClass(klass.className, clsBytes)
 
         assertThat(loadedClass)
             .isNotNull
