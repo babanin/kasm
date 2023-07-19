@@ -9,69 +9,182 @@ package katartal.model
  *      <description>
  *      <stack before> → <stack after>
  */
-enum class ByteCode(val opcode: UByte, val stackChange: Int = 0) {
-    NOP(0u),
-    ACONST_NULL(1u),
+enum class ByteCode(
+    val opcode: UByte,
+    val stackChange: Int = 0,
+    val expectedParameters: Int = 0
+) {
+    /**
+     * Perform no operation
+     */
+    NOP(0x0u), // 0
+
+    /**
+     * Push a null reference onto the stack
+     * → null
+     */
+    ACONST_NULL(0x1u), // 1
 
     /**
      * Load the int value -1 onto the stack
      * → -1
      */
-    ICONST_M1(2u),
+    ICONST_M1(0x2u),
 
     /**
      * Load the int value 0 onto the stack
      * → 0
      */
-    ICONST_0(3u, stackChange = 1),
+    ICONST_0(0x3u, stackChange = 1),
 
     /**
      * Load the int value 1 onto the stack
      * → 1
      */
-    ICONST_1(4u, stackChange = 1),
+    ICONST_1(0x4u, stackChange = 1),
 
     /**
      * Load the int value 2 onto the stack
      * → 2
      */
-    ICONST_2(5u, stackChange = 1),
+    ICONST_2(0x5u, stackChange = 1),
 
     /**
      * Load the int value 3 onto the stack
      * → 3
      */
-    ICONST_3(6u, stackChange = 1),
+    ICONST_3(0x6u, stackChange = 1),
 
     /**
      * Load the int value 4 onto the stack
      * → 4
      */
-    ICONST_4(7u, stackChange = 1),
+    ICONST_4(0x7u, stackChange = 1),
 
     /**
      * Load the int value 5 onto the stack
      * → 5
      */
-    ICONST_5(8u, stackChange = 1),
+    ICONST_5(0x8u, stackChange = 1),
 
-    LCONST_0(9u, stackChange = 1),
-    LCONST_1(10u, stackChange = 1),
-    FCONST_0(11u, stackChange = 1),
-    FCONST_1(12u, stackChange = 1),
-    FCONST_2(13u, stackChange = 1),
-    DCONST_0(14u, stackChange = 1),
-    DCONST_1(15u, stackChange = 1),
-    BIPUSH(16u),
-    SIPUSH(17u),
-    LDC(18u),
-    LDC_W(19u),
-    LDC2_W(20u),
-    ILOAD(0x15u),
-    LLOAD(22u),
-    FLOAD(23u),
-    DLOAD(24u),
-    ALOAD(25u),
+    /**
+     * Push 0L onto the stack
+     * → 0L
+     */
+    LCONST_0(0x9u, stackChange = 1),
+
+    /**
+     * Push 1L onto the stack
+     * → 1L
+     */
+    LCONST_1(0xAu, stackChange = 1),
+
+    /**
+     * Push 0.0f on the stack
+     * → 0.0f
+     */
+    FCONST_0(0xBu, stackChange = 1),
+
+    /**
+     * Push 0.0f on the stack
+     * → 1.0f
+     */
+    FCONST_1(0xCu, stackChange = 1),
+
+    /**
+     * Push 0.0f on the stack
+     * → 2.0f
+     */
+    FCONST_2(0xDu, stackChange = 1),
+
+    /**
+     * Push the constant 0.0 (a double) onto the stack
+     * → 0.0
+     */
+    DCONST_0(0xEu, stackChange = 1),
+
+    /**
+     * Push the constant 1.0 (a double) onto the stack
+     * → 1.0
+     */
+    DCONST_1(0xFu, stackChange = 1),
+
+    /**
+     * Push a byte onto the stack as an integer value
+     * → value
+     * @param byte
+     */
+    BIPUSH(0x10u),
+
+    /**
+     * Push a short onto the stack as an integer value
+     * → value
+     * @param byte1
+     * @param byte2
+     */
+    SIPUSH(0x11u, stackChange = 1, expectedParameters = 2),
+
+    /**
+     * Push a constant #index from a constant pool (
+     * String, int, float, Class, java.lang.invoke.MethodType,
+     * java.lang.invoke.MethodHandle, or a dynamically-computed constant) onto the stack
+     * → value
+     * @param index
+     */
+    LDC(0x12u, stackChange = 1, expectedParameters = 1), // 18
+    
+    /**
+     * Push a constant #index from a constant pool (
+     * String, int, float, Class, java.lang.invoke.MethodType,
+     * java.lang.invoke.MethodHandle, or a dynamically-computed constant) onto the stack
+     * → value
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    LDC_W(0x13u, stackChange = 1, expectedParameters = 2), // 19
+
+    /**
+     * Push a constant #index from a constant pool (double, long, or a dynamically-computed constant) onto the stack
+     * → value
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    LDC2_W(0x14u), // 20
+
+    /**
+     * load an int value from a local variable #index
+     * → value
+     * @param index
+     */
+    ILOAD(0x15u, stackChange = 1, expectedParameters = 1), // 21
+
+    /**
+     * Load a long value from a local variable #index
+     * → value
+     * @param index
+     */
+    LLOAD(0x16u, stackChange = 1, expectedParameters = 1), // 22
+
+    /**
+     * Load a float value from a local variable #index
+     * → value
+     * @param index
+     */
+    FLOAD(0x17u, stackChange = 1, expectedParameters = 1), // 23
+
+    /**
+     * Load a double value from a local variable #index
+     * → value
+     * @param index
+     */
+    DLOAD(0x18u, stackChange = 1, expectedParameters = 1), // 24
+
+    /**
+     * Load a reference onto the stack from a local variable #index
+     * → objectref
+     * @param index
+     */
+    ALOAD(0x19u, stackChange = 1, expectedParameters = 1), // 25
 
     /**
      * Load an int value from local variable 0
@@ -95,50 +208,188 @@ enum class ByteCode(val opcode: UByte, val stackChange: Int = 0) {
      * Load an int value from local variable 3
      * → value
      */
-    ILOAD_3(0x1Eu, stackChange = 1), // 29
+    ILOAD_3(0x1Du, stackChange = 1), // 29
+    
+    /**
+     * Load a long value from local variable 0
+     * → value
+     */
+    LLOAD_0(0x1Eu, stackChange = 1), // 30
+
+    /**
+     * Load a long value from local variable 1
+     * → value
+     */
+    LLOAD_1(0x1Fu, stackChange = 1), // 31
+
+    /**
+     * Load a long value from local variable 2
+     * → value
+     */
+    LLOAD_2(0x20u, stackChange = 1), // 32
+
+    /**
+     * Load a long value from local variable 3
+     * → value
+     */
+    LLOAD_3(0x21u, stackChange = 1), // 33
+
+    /**
+     * Load a float value from local variable 0
+     * → value
+     */
+    FLOAD_0(0x22u, stackChange = 1), // 34
+
+    /**
+     * Load a float value from local variable 1
+     * → value
+     */
+    FLOAD_1(0x23u, stackChange = 1), // 35
+
+    /**
+     * Load a float value from local variable 2
+     * → value
+     */
+    FLOAD_2(0x24u, stackChange = 1), // 36
+
+    /**
+     * Load a float value from local variable 3
+     * → value
+     */
+    FLOAD_3(0x25u, stackChange = 1), // 37
+
+    /**
+     * Load a double value from local variable 0
+     * → value
+     */
+    DLOAD_0(0x26u, stackChange = 1), // 38
+
+    
+    /**
+     * Load a double value from local variable 0
+     * → value
+     */
+    DLOAD_1(0x27u, stackChange = 1), // 39
+
+    
+    /**
+     * Load a double value from local variable 0
+     * → value
+     */
+    DLOAD_2(0x28u, stackChange = 1), // 40
+
+    
+    /**
+     * Load a double value from local variable 0
+     * → value
+     */
+    DLOAD_3(0x29u, stackChange = 1), // 41
 
     /**
      * Load a reference onto the stack from local variable 0
      * → objectref
      */
-    ALOAD_0(0x2Au, stackChange = 1), // 30
+    ALOAD_0(0x2Au, stackChange = 1), // 42
 
     /**
      * Load a reference onto the stack from local variable 1
      * → objectref
      */
-    ALOAD_1(0x2Bu, stackChange = 1), // 31
+    ALOAD_1(0x2Bu, stackChange = 1), // 43
 
     /**
      * Load a reference onto the stack from local variable 2
      * → objectref
      */
-    ALOAD_2(0x2Cu, stackChange = 1), // 32
+    ALOAD_2(0x2Cu, stackChange = 1), // 44
 
     /**
      * Load a reference onto the stack from local variable 3
      * → objectref
      */
-    ALOAD_3(0x2Du, stackChange = 1), // 33
+    ALOAD_3(0x2Du, stackChange = 1), // 45
 
-    IALOAD(46u),
-    LALOAD(47u),
-    FALOAD(48u),
-    DALOAD(49u),
-    AALOAD(50u),
-    BALOAD(51u),
-    CALOAD(52u),
-    SALOAD(53u),
-    ISTORE(54u),
+    /**
+     * Load an int from an array
+     * arrayref, index → value
+     */
+    IALOAD(0x2Eu, stackChange = -1), // 46
+
+    /**
+     * Load a long from an array
+     * arrayref, index → value
+     */
+    LALOAD(0x2Fu, stackChange = -1), // 47
+
+    /**
+     * Load a float from an array
+     * arrayref, index → value
+     */
+    FALOAD(0x30u, stackChange = -1), // 48
+
+    /**
+     * Load a double from an array
+     * arrayref, index → value
+     */
+    DALOAD(0x31u, stackChange = -1), // 49
+
+    /**
+     * Load onto the stack a reference from an array
+     * arrayref, index → value
+     */
+    AALOAD(0x32u, stackChange = -1), // 50
+
+    /**
+     * Load a byte or Boolean value from an array
+     * arrayref, index → value
+     */
+    BALOAD(0x33u, stackChange = -1), // 51
+
+    /**
+     * Load a char from an array
+     * arrayref, index → value
+     */
+    CALOAD(0x34u, stackChange = -1), // 52
+
+    /**
+     * Load short from an array
+     * arrayref, index → value
+     */
+    SALOAD(0x35u, stackChange = -1), // 53
+
+    /**
+     * Store int value into variable #index
+     * value →
+     * @param index
+     */
+    ISTORE(0x36u, stackChange = -1, expectedParameters = 1), // 54
 
     /**
      * Store a long value in a local variable #index
      * value →
      * @param index
      */
-    LSTORE(55u),
-    FSTORE(56u),
-    DSTORE(57u),
+    LSTORE(0x37u, stackChange = -1, expectedParameters = 1), // 55
+
+    /**
+     * Store a float value into a local variable #index
+     * value →
+     * @param index
+     */
+    FSTORE(0x38u), // 56
+
+    /**
+     * Store a float value into a local variable #index
+     * value →
+     * @param index
+     */
+    DSTORE(0x39u), // 57
+
+    /**
+     * Store a float value into a local variable #index
+     * value →
+     * @param index
+     */
     ASTORE(0x3Au), // 58
 
     /**
@@ -196,7 +447,6 @@ enum class ByteCode(val opcode: UByte, val stackChange: Int = 0) {
     IASTORE(79u, stackChange = -3),
 
     /**
-     * [No parameters]
      * Store a long to an array
      * arrayref, index, value →
      */
@@ -240,7 +490,12 @@ enum class ByteCode(val opcode: UByte, val stackChange: Int = 0) {
 
     POP(87u),
     POP2(88u),
-    DUP(89u),
+
+    /**
+     * Duplicate the value on top of the stack
+     * value → value, value
+     */
+    DUP(0x59u, stackChange = 1), // 89
     DUP_X1(90u),
     DUP_X2(91u),
     DUP2(92u),
@@ -290,7 +545,7 @@ enum class ByteCode(val opcode: UByte, val stackChange: Int = 0) {
      * @param index
      * @param const
      */
-    IINC(132u),
+    IINC(132u, expectedParameters = 2),
     I2L(133u),
     I2F(134u),
     I2D(135u),
@@ -311,7 +566,14 @@ enum class ByteCode(val opcode: UByte, val stackChange: Int = 0) {
     FCMPG(150u),
     DCMPL(151u),
     DCMPG(152u),
-    IFEQ(153u),
+
+    /**
+     * if value is 0, branch to instruction at branchoffset
+     * value →
+     * @param branchbyte1
+     * @param branchbyte2
+     */
+    IFEQ(0x99u, stackChange = -1, expectedParameters = 2), // 153
 
     /**
      * If value is not 0, branch to instruction at branchoffset
@@ -319,20 +581,36 @@ enum class ByteCode(val opcode: UByte, val stackChange: Int = 0) {
      * @param branchbyte1
      * @param branchbyte2
      */
-    IFNE(154u),
-    IFLT(155u),
-    IFGE(156u),
-    IFGT(157u),
-    IFLE(158u),
+    IFNE(0x9Au, stackChange = -1, expectedParameters = 2), // 154
+    
+    IFLT(155u), // 155
+    IFGE(156u), // 156
+    IFGT(157u), // 157
+    IFLE(158u), // 158
     IF_ICMPEQ(159u),
     IF_ICMPNE(160u),
     IF_ICMPLT(161u),
     IF_ICMPGE(162u),
+
+    /**
+     * If value1 is greater than value2, branch to instruction at branchoffset
+     * value1, value2 →
+     * @param branchbyte1
+     * @param branchbyte2
+     */
     IF_ICMPGT(163u),
     IF_ICMPLE(164u),
     IF_ACMPEQ(165u),
     IF_ACMPNE(166u),
-    GOTO(167u),
+
+    /**
+     * Goes to another instruction at branchoffset
+     * →
+     * @param branchbyte1
+     * @param branchbyte2
+     */
+    GOTO(0xA7u, stackChange = 0, expectedParameters = 2),
+    
     JSR(168u),
     RET(169u),
     TABLESWITCH(170u),
@@ -343,27 +621,83 @@ enum class ByteCode(val opcode: UByte, val stackChange: Int = 0) {
     DRETURN(175u),
     ARETURN(176u),
     RETURN(177u),
-    GETSTATIC(178u),
-    PUTSTATIC(179u),
+
+    /**
+     * Get a static field value of a class, where the field is identified by field reference in the constant pool index
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    GETSTATIC(178u, stackChange = 1, expectedParameters = 2),
+
+    /**
+     * Set static field to value in a class, where the field is identified by a field reference index in constant pool
+     * value →
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    PUTSTATIC(0xB3u, stackChange = -1, expectedParameters = 2), // 179
     GETFIELD(180u),
-    PUTFIELD(181u),
+
+    /**
+     * Set field to value in an object objectref, where the field is identified by a field reference index in constant pool
+     * objectref, value →
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    PUTFIELD(181u, stackChange = -2, expectedParameters = 2),
     INVOKEVIRTUAL(182u),
-    INVOKESPECIAL(183u),
-    INVOKESTATIC(184u),
+
+    /**
+     * Invoke instance method on object objectref and puts the result on the stack (might be void).
+     * The method is identified by method reference index in constant pool.
+     * objectref, [arg1, arg2, ...] → result
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    INVOKESPECIAL(0xB7u, expectedParameters = 2), // 183
+
+    /**
+     * Invoke a static method and puts the result on the stack (might be void); 
+     * the method is identified by method reference index in constant pool
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    INVOKESTATIC(0xB8u, expectedParameters = 2), // 184
     INVOKEINTERFACE(185u),
     INVOKEDYNAMIC(186u),
-    NEW(187u),
+
+    /**
+     * Create new object of type identified by class reference in constant pool index
+     * → objectref
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    NEW(0xBBu), // 187
 
     /**
      * Create new array with count elements of primitive type identified by atype
      * count → arrayref
      * @param 1: atype
      */
-    NEWARRAY(188u),
+    NEWARRAY(188u, expectedParameters = 1),
+
+    /**
+     * Create a new array of references of length count and component type identified by the class reference index
+     * count → arrayref
+     * @param indexbyte1
+     * @param indexbyte2
+     */
     ANEWARRAY(189u),
     ARRAYLENGTH(190u),
     ATHROW(191u),
-    CHECKCAST(192u),
+
+    /**
+     * Checks whether an objectref is of a certain type, the class reference of which is in the constant pool at index
+     * objectref → objectref
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    CHECKCAST(0xC0u), // 192
     INSTANCEOF(193u),
     MONITORENTER(194u),
     MONITOREXIT(195u),

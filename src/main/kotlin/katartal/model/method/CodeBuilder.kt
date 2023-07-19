@@ -3,6 +3,8 @@ package katartal.model.method
 import katartal.model.ByteCode
 import katartal.model.CPoolIndex
 import katartal.model.ConstantPool
+import katartal.model.method.instruction.InstructionBuilder
+import katartal.model.method.instruction.LazyInstructionBuilder
 import katartal.util.descriptor
 import katartal.util.path
 import kotlin.math.max
@@ -10,8 +12,10 @@ import kotlin.math.max
 class CodeBuilder(
     var maxLocals: Int = -1,
     var maxStack: Int = -1,
-    val initialOffset: UShort = 0u,
-    private val constantPool: ConstantPool
+    private val initialOffset: UShort = 0u,
+    internal val labels: MutableMap<String, Label>,
+    internal val variables: MutableList<LocalVariable>,
+    internal val constantPool: ConstantPool
 ) {
     val instructions = mutableListOf<InstructionBuilder>()
     val frames = mutableListOf<StackFrameBuilder.StackFrame>()
@@ -30,12 +34,12 @@ class CodeBuilder(
     fun _ldc(cpIndex: CPoolIndex): InstructionBuilder {
         if (cpIndex.index > 255u) {
             return _instruction(ByteCode.LDC_W) {
-                _referenceU2(cpIndex)
+                _indexU2(cpIndex)
             }
         }
 
         return _instruction(ByteCode.LDC) {
-            _referenceU1(cpIndex)
+            _indexU1(cpIndex)
         }
     }
 
@@ -43,9 +47,20 @@ class CodeBuilder(
         return _ldc(constantPool.writeString(value))
     }
 
+
+    fun _ldc(value: Int): InstructionBuilder {
+        return _ldc(constantPool.writeInteger(value))
+    }
+
     fun _getstatic(cls: Class<*>, name: String, description: Class<*>): InstructionBuilder {
         return _instruction(ByteCode.GETSTATIC) {
-            _referenceU2(constantPool.writeFieldRef(cls.path(), name, description.descriptor()))
+            _indexU2(constantPool.writeFieldRef(cls.path(), name, description.descriptor()))
+        }
+    }
+
+    fun _getstatic(cls: String, name: String, description: String): InstructionBuilder {
+        return _instruction(ByteCode.GETSTATIC) {
+            _indexU2(constantPool.writeFieldRef(cls, name, description))
         }
     }
 
@@ -59,7 +74,7 @@ class CodeBuilder(
         return listOf(
             _instruction(ByteCode.ALOAD_0),
             _instruction(ByteCode.INVOKESPECIAL) {
-                _referenceU2(constantPool.writeMethodRef(cls.path(), method, description))
+                _indexU2(constantPool.writeMethodRef(cls.path(), method, description))
             }
         )
     }
@@ -68,58 +83,47 @@ class CodeBuilder(
         ensureStackCapacity(2)
 
         return _instruction(ByteCode.INVOKEVIRTUAL) {
-            _referenceU2(constantPool.writeMethodRef(cls.path(), method, description))
+            _indexU2(constantPool.writeMethodRef(cls.path(), method, description))
         }
-    }
-
-    fun _if(code: ByteCode, subRoutine: CodeBuilder.() -> Unit): List<InstructionBuilder> {
-        val ifItself : UByte = (1u + 2u).toUByte()
-        
-        val codeBuilder = CodeBuilder(initialOffset = (currentPos + ifItself).toUShort(), constantPool = constantPool)
-        codeBuilder.subRoutine()
-
-        val codeLength = codeBuilder.size
-
-        val ifInst = _instruction(code) {
-            _referenceU2((ifItself + codeLength).toUShort())
-        }
-
-        frames += codeBuilder.frames
-        instructions += codeBuilder.instructions
-        
-        this.maxStack = max(maxStack, codeBuilder.maxStack)
-
-        val inst = mutableListOf<InstructionBuilder>()
-        inst += ifInst
-        inst += codeBuilder.instructions
-        return inst
     }
 
     val currentPos: UShort
         get() = (initialOffset + size).toUShort()
-    
+
     val size: UShort
         get() = instructions.fold(0) { acc, inst -> acc + inst.size }.toUShort()
 
-    fun label(): Label {
-        return Label(currentPos)
+    fun _lazyInstruction(
+        code: ByteCode,
+        reserve: Int,
+        evaluate: LazyInstructionBuilder.() -> Unit
+    ): LazyInstructionBuilder {
+        val lazyInstructionBuilder = InstructionBuilder.lazy(code, reserve, evaluate)
+        instructions += lazyInstructionBuilder
+
+        return lazyInstructionBuilder
     }
-    
-    data class Label(val position: UShort) 
+
+    fun _lazyInstruction(code: ByteCode, evaluate: LazyInstructionBuilder.() -> Unit): LazyInstructionBuilder {
+        val lazyInstructionBuilder = InstructionBuilder.lazy(code, code.expectedParameters, evaluate)
+        instructions += lazyInstructionBuilder
+
+        return lazyInstructionBuilder
+    }
 
     fun _instruction(code: ByteCode, init: InstructionBuilder.() -> Unit): InstructionBuilder {
-        val builder = InstructionBuilder(code)
+        val builder = InstructionBuilder.eager(code)
         builder.init()
         instructions.add(builder)
         return builder
     }
 
     fun _instruction(code: ByteCode): InstructionBuilder {
-        val builder = InstructionBuilder(code)
+        val builder = InstructionBuilder.eager(code)
         instructions.add(builder)
         return builder
     }
-        
+
     fun _stackFrame(init: StackFrameBuilder.() -> Unit) {
         val stackFrameBuilder = StackFrameBuilder(currentPos)
         stackFrameBuilder.init()
@@ -152,14 +156,29 @@ class CodeBuilder(
         _instruction(operation)
     }
 
-    fun _nop(): InstructionBuilder {
-        return _instruction(ByteCode.NOP)
-    }
-
     fun _goto(label: Label): InstructionBuilder {
         return _instruction(ByteCode.GOTO) {
             _position((label.position.toInt() - currentPos.toInt()).toShort())
         }
+    }
+
+    fun _goto(label: String): LazyInstructionBuilder {
+        val position = currentPos
+        return _lazyInstruction(ByteCode.GOTO) {
+            val evaluatedLabel = labels[label] ?: throw IllegalStateException("Unable to find label `${label}`")
+            _position((evaluatedLabel.position.toInt() - position.toInt()).toShort())
+        }
+    }
+
+    fun label(name: String): Label {
+        val label = Label(name, currentPos)
+        labels[name] = label
+
+        return label
+    }
+
+    fun label(): Label {
+        return label("Position: $currentPos")
     }
 
     fun _goto(absolute: Short): InstructionBuilder {
@@ -168,11 +187,38 @@ class CodeBuilder(
         }
     }
 
+    fun _iconst(num: Int): InstructionBuilder {
+        return when (num) {
+            -1 -> _instruction(ByteCode.ICONST_M1)
+            0 -> _instruction(ByteCode.ICONST_0)
+            1 -> _instruction(ByteCode.ICONST_1)
+            2 -> _instruction(ByteCode.ICONST_2)
+            3 -> _instruction(ByteCode.ICONST_3)
+            4 -> _instruction(ByteCode.ICONST_4)
+            5 -> _instruction(ByteCode.ICONST_5)
+            in 5..255 -> _instruction(ByteCode.BIPUSH) { _const(num.toByte()) }
+            in 256..65535 -> _instruction(ByteCode.SIPUSH) { _value(num.toShort()) }
+            else -> _instruction(ByteCode.LDC) { _indexU2(constantPool.writeInteger(num)) }
+        }
+    }
+
+
     operator fun plus(other: CodeBuilder): CodeBuilder {
         this.instructions += other.instructions
         this.frames += other.frames
         this.maxStack = max(maxStack, other.maxStack)
         this.maxLocals = max(maxLocals, other.maxLocals)
         return this
+    }
+
+    fun flush() {
+        var stackSize = 0
+        for (instruction in instructions) {
+            instruction.flush()
+            stackSize += instruction.code.stackChange
+            this.maxStack = max(maxStack, stackSize)
+        }
+        
+        println("Max stack ${maxStack}")
     }
 }

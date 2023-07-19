@@ -1,6 +1,7 @@
 package util
 
 import org.assertj.core.api.AbstractClassAssert
+import java.lang.reflect.Field
 
 class EnhancedClassAssertions(actual: Class<*>?) :
     AbstractClassAssert<EnhancedClassAssertions>(actual, EnhancedClassAssertions::class.java) {
@@ -8,6 +9,15 @@ class EnhancedClassAssertions(actual: Class<*>?) :
     fun isEnum(): EnhancedClassAssertions {
         isNotNull()
         assertIsEnum()
+        return myself
+    }
+
+    fun hasFieldWithType(fieldName: String, fieldClass: Class<*>): EnhancedClassAssertions {
+        isNotNull
+
+        actual.declaredFields.find { it.name == fieldName }
+            ?: throw assertionError(ShouldHasField.shouldHasField(actual, fieldName, fieldClass))
+
         return myself
     }
 

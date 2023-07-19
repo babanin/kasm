@@ -21,4 +21,16 @@ data class MethodAccess(val opcode: UShort) {
     operator fun plus(access: MethodAccess): MethodAccess {
         return MethodAccess(this.opcode or access.opcode)
     }
+    
+    operator fun minus(access: MethodAccess) : MethodAccess {
+        return MethodAccess(this.opcode and (!access).opcode)
+    }
+    
+    operator fun get(access : MethodAccess) : Boolean {
+        return (this.opcode and access.opcode) != 0.toUShort()
+    }
+    
+    operator fun not() : MethodAccess {
+        return MethodAccess(this.opcode.inv()) 
+    }
 }

@@ -1,6 +1,10 @@
 package katartal.model.method
 
-import katartal.model.*
+import katartal.model.CPoolIndex
+import katartal.model.ConstantPool
+import katartal.model.attribute.*
+import katartal.model.method.MethodAccess.Companion.STATIC
+import katartal.model.method.instruction.InstructionBuilder
 import katartal.util.DynamicByteArray
 import katartal.util.descriptor
 import katartal.util.path
@@ -10,26 +14,29 @@ class MethodBuilder(
     var access: MethodAccess = MethodAccess.PUBLIC,
     val ctr: Boolean = false,
     val parameters: List<Pair<String, Any>> = listOf(),
+    private val currentClass: String,
     private val constantPool: ConstantPool
 ) {
 
     val name: String
         get() = constantPool.readUtf8(nameCpIndex)!!
 
-    val nameCpIndex: CPoolIndex    
+    val descriptor: String
+        get() = constantPool.readUtf8(descriptorCpIndex)!!
+
+    val nameCpIndex: CPoolIndex
     var descriptorCpIndex: CPoolIndex
-    
+
     val attributes: MutableList<Attribute> = mutableListOf()
+    private val labels = mutableMapOf<String, Label>()
+    private val variables = mutableListOf<LocalVariable>()
 
     private val throws = mutableListOf<String>()
     private var parametersDescriptor: String
-    private val localsBuilder: LocalsBuilder
     private val codeBuilders: MutableList<CodeBuilder> = mutableListOf()
 
     init {
         nameCpIndex = constantPool.writeUtf8(name)
-
-        localsBuilder = LocalsBuilder(constantPool)
 
         parametersDescriptor =
             parameters
@@ -44,18 +51,32 @@ class MethodBuilder(
         descriptorCpIndex = constantPool.writeUtf8("${parametersDescriptor}V")
     }
 
+    fun _var(name: String, descriptor: Class<*>, startPc: UShort, length: UShort): LocalVariable {
+        return _var(name, descriptor.descriptor(), startPc, length)
+    }
+
+    fun _var(name: String, descriptor: String, startPc: UShort, length: UShort): LocalVariable {
+        val localVariable =
+            LocalVariable(constantPool.writeUtf8(name), startPc, length, constantPool.writeUtf8(descriptor))
+        variables += localVariable
+
+        return localVariable
+    }
+
     fun _code(maxLocals: Int = -1, maxStack: Int = -1, init: CodeBuilder.() -> Unit): CodeBuilder {
         val codeBuilder =
             CodeBuilder(
                 maxLocals = if (maxLocals == -1) parameters.size + 1 else maxLocals,
                 maxStack,
-                constantPool = constantPool
+                constantPool = constantPool,
+                labels = labels,
+                variables = variables
             )
         codeBuilders += codeBuilder
         codeBuilder.init()
         return codeBuilder
     }
-
+    
     infix fun returns(returnCls: String): MethodBuilder {
         descriptorCpIndex = constantPool.writeUtf8("${parametersDescriptor}$returnCls")
         return this
@@ -80,6 +101,8 @@ class MethodBuilder(
             if (codeBuilders.isEmpty()) _code { _return() }
             else codeBuilders.reduce { acc, codeBuilder -> acc + codeBuilder }
 
+        codeBuilder.flush()
+
         attributes += buildCodeAttribute(codeBuilder)
         attributes += buildLocalVariableTable(codeBuilder)
     }
@@ -103,7 +126,12 @@ class MethodBuilder(
 
             entries += when (frame) {
                 is StackFrameBuilder.AppendFrame -> append_frame(offsetDelta, mapTypes(frame.locals))
-                is StackFrameBuilder.FullFrame -> full_frame(offsetDelta, mapTypes(frame.locals), mapTypes(frame.stacks))
+                is StackFrameBuilder.FullFrame -> full_frame(
+                    offsetDelta,
+                    mapTypes(frame.locals),
+                    mapTypes(frame.stacks)
+                )
+
                 is StackFrameBuilder.ChopFrame -> chop_frame(offsetDelta, frame.k)
                 is StackFrameBuilder.SameFrame -> same_frame(offsetDelta.toUByte())
             }
@@ -149,32 +177,55 @@ class MethodBuilder(
         return CodeAttribute(
             constantPool.writeUtf8("Code"),
             codeBuilder.maxStack.toUShort(),
-            (parameters.size + codeBuilder.maxLocals).toUShort(),
-            codeArray.toByteArray(), 
+            (parameters.size + variables.size + (if(access[STATIC]) 0 else 1)).toUShort(),
+            codeArray.toByteArray(),
             attributes = listOf(buildStackMapFrameTable(codeBuilder))
         )
     }
 
-    private fun buildLocalVariableTable(codeBuilder: CodeBuilder): LocalVariableTable {
-        val localVarsTable = parameters.mapIndexed { index, pair ->
-            LocalVariableTableEntry(
+    private fun buildLocalVariableTable(codeBuilder: CodeBuilder): LocalVariableTableAttribute {
+        val localVarsTable = mutableListOf<LocalVariableTableEntry>()
+
+        var index: UShort = 0u
+        if (!access[STATIC]) {
+            localVarsTable += LocalVariableTableEntry(
                 0u,
                 codeBuilder.currentPos,
-                constantPool.writeUtf8(pair.first),
+                constantPool.writeUtf8("this"),
+                constantPool.writeUtf8(currentClass),
+                index
+            )
+
+            index++
+        }
+
+        for (parameter in parameters) {
+            localVarsTable += LocalVariableTableEntry(
+                0u,
+                codeBuilder.currentPos,
+                constantPool.writeUtf8(parameter.first),
                 constantPool.writeUtf8(
-                    when (pair.second) {
-                        is Class<*> -> (pair.second as Class<*>).descriptor()
-                        else -> pair.second.toString()
+                    when (parameter.second) {
+                        is Class<*> -> (parameter.second as Class<*>).descriptor()
+                        else -> parameter.second.toString()
                     }
                 ),
-                index.toUShort()
+                index
             )
-        }.toMutableList()
 
-        localVarsTable += localsBuilder.variables.mapIndexed { i, it ->
-            LocalVariableTableEntry(
-                it.startPc, it.length, it.nameIndex, it.descriptor, (i + localVarsTable.size).toUShort()
+            index++
+        }
+
+        for (variable in variables) {
+            localVarsTable += LocalVariableTableEntry(
+                variable.startPc,
+                variable.length,
+                variable.nameIndex,
+                variable.descriptor,
+                index
             )
+            
+            index++
         }
 
         println("LocalVariableTable: ")
@@ -184,13 +235,14 @@ class MethodBuilder(
         }
         println()
 
-        return LocalVariableTable(
+        return LocalVariableTableAttribute(
             constantPool.writeUtf8("LocalVariableTable"),
             localVarsTable
         )
     }
 
-    fun _locals(init: LocalsBuilder.() -> Unit) {
-        localsBuilder.init()
+    override fun toString(): String {
+        return "$currentClass.$name$descriptor"
     }
+
 }

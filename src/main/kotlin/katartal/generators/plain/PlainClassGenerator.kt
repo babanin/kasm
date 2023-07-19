@@ -47,8 +47,15 @@ class PlainClassGenerator : ClassGenerator {
             cls.putU2(interfaceIdx.toUInt()) // super class
         }
 
-        cls.putU2(0u) // fields_count
-        // fields
+        cls.putU2(clsBuilder.fieldBuilders.size) // fields_count
+        for (fieldBuilder in clsBuilder.fieldBuilders) {
+            cls.putU2(fieldBuilder.access.opcode)
+            cls.putU2(fieldBuilder.nameCpIndex.toUInt())
+            cls.putU2(fieldBuilder.descriptorCpIndex.toUInt())
+
+            cls.putU2(0u) // attributes_count
+            // attributes
+        }
 
         cls.putU2(clsBuilder.methodBuilders.size.toUInt()) // methods_count
         for (methodBuilder in clsBuilder.methodBuilders) {
