@@ -28,7 +28,7 @@ class EnumBuilder(enumName: String, access: ClassAccess) :
     }
 
     override fun flush() {
-        _field(" \$VALUES", "[L$className;", PRIVATE + STATIC + FINAL + SYNTHETIC)
+        _field("\$VALUES", "[L$className;", PRIVATE + STATIC + FINAL + SYNTHETIC)
 
         val ctor =
             _constructor(listOf("name" to String::class.java, "ordinal" to Int::class.java), MethodAccess.PRIVATE) {
@@ -65,7 +65,7 @@ class EnumBuilder(enumName: String, access: ClassAccess) :
                 _instruction(ByteCode.ARETURN)
             }
         } returns "[L$className;"
-        
+
         _method("values", access = MethodAccess.PUBLIC + MethodAccess.STATIC) {
             _code {
                 _getstatic(className, "\$VALUES", "[L$className;")
@@ -73,11 +73,11 @@ class EnumBuilder(enumName: String, access: ClassAccess) :
                 _instruction(ByteCode.INVOKEVIRTUAL) {
                     _indexU2(constantPool.writeMethodRef("[L$className;", "clone", "()Ljava/lang/Object;"))
                 }
-                
+
                 _instruction(ByteCode.CHECKCAST) {
                     _indexU2(constantPool.writeClass("[L$className;"))
                 }
-                
+
                 _instruction(ByteCode.ARETURN)
             }
         } returns "[L$className;"
