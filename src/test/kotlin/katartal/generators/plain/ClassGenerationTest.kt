@@ -97,7 +97,8 @@ class ClassGenerationTest {
         val klass = _class("Test") {
             _method("equals", listOf("other" to Object::class.java)) {
                 _code {
-                    _return(true)
+                    _instruction(ILOAD_1)
+                    _return(Boolean::class.java)
                 }
             } returns Boolean::class.java
         }
@@ -120,7 +121,8 @@ class ClassGenerationTest {
         val klass = _class("Test") {
             _method("equals", listOf("other" to Object::class.java)) {
                 _code {
-                    _return(true)
+                    _instruction(ILOAD_1)
+                    _return("Z")
                 }
             } returns Boolean::class.java throws FileNotFoundException::class.java
         }
@@ -166,10 +168,7 @@ class ClassGenerationTest {
         // given
         val klass = _class("Test") {
             _method("fizzBuzz", listOf("count" to Int::class.java), PUBLIC + STATIC) {
-//                _var("result", Array<String>::class.java, 5u, 66u)
-//                _var("i", Int::class.java, 7u, 62u)
-                
-                _code(maxLocals = 3) {
+                _code {
                     // String[] result = new String[count]
                     _instruction(ILOAD_0)
                     _instruction(ANEWARRAY) {
@@ -188,7 +187,7 @@ class ClassGenerationTest {
                     }
 
                     label("for")
-                    
+
                     val i = variable("i", "I")
                     _instruction(ILOAD_2) // i
                     _instruction(ILOAD_0) // count
@@ -261,7 +260,7 @@ class ClassGenerationTest {
 
                     _instruction(ALOAD_1)
                     _instruction(ARETURN)
-                    
+
                     releaseVariable(result)
                 }
             } returns Array<String>::class.java
@@ -306,7 +305,7 @@ class ClassGenerationTest {
                 _var("result", IntArray::class.java, 4u, 19u)
                 _var("i", Int::class.java, 6u, 15u)
 
-                _code(maxLocals = 3, maxStack = 3) {
+                _code {
                     // Locals:
                     //   0: count (parameter)
                     //   1: int[] array (result)

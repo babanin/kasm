@@ -2,6 +2,7 @@ package katartal.model.field
 
 import katartal.model.CPoolIndex
 import katartal.model.ConstantPool
+import katartal.model.attribute.Attribute
 
 class FieldBuilder(
     val name: String,
@@ -12,6 +13,8 @@ class FieldBuilder(
 
     val nameCpIndex: CPoolIndex
     val descriptorCpIndex: CPoolIndex
+    
+    val attributes: MutableList<Attribute> = mutableListOf()
 
     init {
         this.nameCpIndex = constantPool.writeUtf8(name)

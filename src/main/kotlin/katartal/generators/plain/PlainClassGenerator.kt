@@ -53,7 +53,10 @@ class PlainClassGenerator : ClassGenerator {
             cls.putU2(fieldBuilder.nameCpIndex.toUInt())
             cls.putU2(fieldBuilder.descriptorCpIndex.toUInt())
 
-            cls.putU2(0u) // attributes_count
+            cls.putU2(fieldBuilder.attributes.size) // attributes_count
+            for (attribute in fieldBuilder.attributes) {
+                cls.putByteArray(attribute.toByteArray())
+            }
             // attributes
         }
 
@@ -71,8 +74,10 @@ class PlainClassGenerator : ClassGenerator {
         }
         // methods
 
-        cls.putU2(0u) // attributes_count
-        // attributes
+        cls.putU2(clsBuilder.attributes.size) // attributes_count
+        for (attribute in clsBuilder.attributes) {
+            cls.putByteArray(attribute.toByteArray())
+        } // attributes
 
         return cls.toByteArray()
     }

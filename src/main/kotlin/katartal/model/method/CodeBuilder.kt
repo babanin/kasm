@@ -187,7 +187,7 @@ class CodeBuilder(
         }
     }
 
-    fun _iconst(num: Int): InstructionBuilder {
+    fun _loadIntOnStack(num: Int): InstructionBuilder {
         return when (num) {
             -1 -> _instruction(ByteCode.ICONST_M1)
             0 -> _instruction(ByteCode.ICONST_0)
@@ -198,10 +198,23 @@ class CodeBuilder(
             5 -> _instruction(ByteCode.ICONST_5)
             in 5..255 -> _instruction(ByteCode.BIPUSH) { _const(num.toByte()) }
             in 256..65535 -> _instruction(ByteCode.SIPUSH) { _value(num.toShort()) }
-            else -> _instruction(ByteCode.LDC) { _indexU2(constantPool.writeInteger(num)) }
+            else -> _ldc(num)
         }
     }
 
+    fun _return(type: String): InstructionBuilder {
+        return when (type) {
+            in listOf("I", "Z", "C", "B") -> _instruction(ByteCode.IRETURN)
+            "L" -> _instruction(ByteCode.LRETURN)
+            "F" -> _instruction(ByteCode.FRETURN)
+            "D" -> _instruction(ByteCode.DRETURN)
+            else -> _instruction(ByteCode.ARETURN)
+        }
+    }
+
+    fun _return(type: Class<*>): InstructionBuilder {
+        return _return(type.descriptor())
+    }
 
     operator fun plus(other: CodeBuilder): CodeBuilder {
         this.instructions += other.instructions
@@ -215,10 +228,15 @@ class CodeBuilder(
         var stackSize = 0
         for (instruction in instructions) {
             instruction.flush()
-            stackSize += instruction.code.stackChange
+
+            val code = instruction.code
+            if (code.resetStack != null) {
+                stackSize = code.resetStack
+            } else {
+                stackSize += code.stackChange
+            }
+
             this.maxStack = max(maxStack, stackSize)
         }
-        
-        println("Max stack ${maxStack}")
     }
 }

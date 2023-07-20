@@ -1,5 +1,6 @@
 package katartal.model
 
+import katartal.model.ConstantPool.RefKind.*
 import katartal.util.DynamicByteArray
 
 @Suppress("ClassName")
@@ -84,8 +85,40 @@ class ConstantPool : Iterable<ConstantPool.ConstantPoolEntry> {
     fun writeDouble(value: Double): CPoolIndex {
         return addEntry(CONSTANT_Double_info(value))
     }
-    
-    fun writeInterfaceMethodRef(cls: String, name: String, type: String) : CPoolIndex {
+
+    fun writeDynamic(bootstrapMethodAttrIndex: UShort, nameAndTypeIdx: CPoolIndex): CPoolIndex {
+        return addEntry(CONSTANT_Dynamic_info(bootstrapMethodAttrIndex, nameAndTypeIdx))
+    }
+
+    fun writeInvokeDynamic(bootstrapMethodAttrIndex: UShort, nameAndTypeIdx: CPoolIndex): CPoolIndex {
+        return addEntry(CONSTANT_InvokeDynamic_info(bootstrapMethodAttrIndex, nameAndTypeIdx))
+    }
+
+    fun writeInvokeDynamic(bootstrapMethodAttrIndex: UShort, name: String, type: String): CPoolIndex {
+        return addEntry(CONSTANT_InvokeDynamic_info(bootstrapMethodAttrIndex, writeNameAndType(name, type)))
+    }
+
+    fun writeMethodHandle(referenceKind: RefKind, referenceIndex: CPoolIndex): CPoolIndex {
+        return addEntry(CONSTANT_MethodHandle_info(referenceKind, referenceIndex))
+    }
+
+    fun writeMethodHandle(referenceKind: RefKind, cls: String, name: String, type: String): CPoolIndex {
+        val referenceIndex = when (referenceKind) {
+            in listOf(REF_getStatic, REF_putStatic, REF_getField, REF_putField) -> writeFieldRef(cls, name, type)
+            in listOf(REF_invokeVirtual, REF_newInvokeSpecial, REF_invokeStatic, REF_invokeSpecial) -> writeMethodRef(
+                cls,
+                name,
+                type
+            )
+
+            REF_invokeInterface -> writeInterfaceMethodRef(cls, name, type)
+            else -> throw IllegalStateException("Unsupported reference kind in method handle: $referenceKind")
+        }
+
+        return writeMethodHandle(referenceKind, referenceIndex)
+    }
+
+    fun writeInterfaceMethodRef(cls: String, name: String, type: String): CPoolIndex {
         val clsIndex = writeClass(cls)
         val nameAndTypeIdx = writeNameAndType(name, type)
         return addEntry(CONSTANT_InterfaceMethodref(clsIndex, nameAndTypeIdx))
@@ -211,7 +244,7 @@ class ConstantPool : Iterable<ConstantPool.ConstantPoolEntry> {
 
     data class CONSTANT_Long_info(val value: Long) : ConstantPoolEntry(Tag.CONSTANT_Long) {
         override fun toByteArray(): ByteArray {
-            return DynamicByteArray(5).apply {
+            return DynamicByteArray(9).apply {
                 putU1(Tag.CONSTANT_Long.code)
                 putU8(value)
             }.toByteArray()
@@ -220,11 +253,54 @@ class ConstantPool : Iterable<ConstantPool.ConstantPoolEntry> {
 
     data class CONSTANT_Double_info(val value: Double) : ConstantPoolEntry(Tag.CONSTANT_Double) {
         override fun toByteArray(): ByteArray {
-            return DynamicByteArray(5).apply {
+            return DynamicByteArray(9).apply {
                 putU1(Tag.CONSTANT_Double.code)
                 putU8(value.toBits())
             }.toByteArray()
         }
+    }
+
+    data class CONSTANT_Dynamic_info(val bootstrapMethodAttrIndex: UShort, val nameAndTypeIdx: CPoolIndex) :
+        ConstantPoolEntry(Tag.CONSTANT_Dynamic) {
+        override fun toByteArray(): ByteArray {
+            return DynamicByteArray(5).apply {
+                putU1(Tag.CONSTANT_Dynamic.code)
+                putU2(bootstrapMethodAttrIndex)
+                putU2(nameAndTypeIdx.toUInt())
+            }.toByteArray()
+        }
+    }
+
+    data class CONSTANT_InvokeDynamic_info(val bootstrapMethodAttrIndex: UShort, val nameAndTypeIdx: CPoolIndex) :
+        ConstantPoolEntry(Tag.CONSTANT_InvokeDynamic) {
+        override fun toByteArray(): ByteArray =
+            DynamicByteArray(5).apply {
+                putU1(Tag.CONSTANT_InvokeDynamic.code)
+                putU2(bootstrapMethodAttrIndex)
+                putU2(nameAndTypeIdx.toUInt())
+            }.toByteArray()
+    }
+
+    enum class RefKind(val kind: UByte) {
+        REF_getField(1u),
+        REF_getStatic(2u),
+        REF_putField(3u),
+        REF_putStatic(4u),
+        REF_invokeVirtual(5u),
+        REF_invokeStatic(6u),
+        REF_invokeSpecial(7u),
+        REF_newInvokeSpecial(8u),
+        REF_invokeInterface(9u)
+    }
+
+    data class CONSTANT_MethodHandle_info(val referenceKind: RefKind, val referenceIndex: CPoolIndex) :
+        ConstantPoolEntry(Tag.CONSTANT_MethodHandle) {
+        override fun toByteArray(): ByteArray =
+            DynamicByteArray(3).apply {
+                putU1(Tag.CONSTANT_MethodHandle.code)
+                putU1(referenceKind.kind)
+                putU2(referenceIndex.toUInt())
+            }.toByteArray()
     }
 
     val size get() = entries.size
