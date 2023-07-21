@@ -15,7 +15,7 @@ import katartal.util.DynamicByteArray
  * }
  */
 class BootstrapMethodAttribute(attributeNameIndex: CPoolIndex, val bootstrapMethods: List<BootstrapMethod>) :
-    Attribute(attributeNameIndex) {
+    Attribute(attributeNameIndex), ClassAttribute {
     override fun generateAttributeData(): ByteArray {
         return DynamicByteArray().apply {
             putU2(bootstrapMethods.size)

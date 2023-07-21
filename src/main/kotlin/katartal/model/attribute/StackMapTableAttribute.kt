@@ -14,7 +14,7 @@ import katartal.util.DynamicByteArray
  * }
  */
 class StackMapTableAttribute(attributeNameIndex: CPoolIndex, private val frames: List<StackMapFrameAttribute>) :
-    Attribute(attributeNameIndex) {
+    Attribute(attributeNameIndex), MethodCodeAttribute {
     override fun generateAttributeData(): ByteArray {
         val localVarAttributeArray = DynamicByteArray()
         localVarAttributeArray.putU2(frames.size)

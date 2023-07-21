@@ -18,6 +18,7 @@ class EnhancedClassAssertions(actual: Class<*>?) :
         return myself
     }
 
+    
     fun hasFieldWithType(fieldName: String, fieldClass: Class<*>): EnhancedClassAssertions {
         isNotNull
 
