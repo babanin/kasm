@@ -6,6 +6,7 @@ data class ClassAccess(val opcode: UShort) {
         val PRIVATE = ClassAccess(0x0002u)
         val PROTECTED = ClassAccess(0x0004u)
         val FINAL = ClassAccess(0x0010u)
+        val SUPER = ClassAccess(	0x0020u)
         val INTERFACE = ClassAccess(0x0200u)
         val ABSTRACT = ClassAccess(0x0400u)
         val SYNTHETIC = ClassAccess(0x1000u)

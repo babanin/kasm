@@ -7,27 +7,12 @@ fun <T> Class<T>.path(): String {
 
 private val PRIMITIVES = mapOf<Class<*>, String>(
     Byte::class.java to "B",
-    java.lang.Byte::class.java to "B",
-    
-    Char::class.java to "C",
-    java.lang.Character::class.java to "C",
-    
-    Double::class.java to "D",
-    java.lang.Double::class.java to "D",
-    
-    Float::class.java to "F",
-    java.lang.Float::class.java to "F",
-    
-    Int::class.java to "I",
-    java.lang.Integer::class.java to "I",
-    
-    Long::class.java to "J",
-    java.lang.Long::class.java to "J",
-    
-    Void::class.java to "V",
-    
     Boolean::class.java to "Z",
-    java.lang.Boolean::class.java to "Z"
+    Char::class.java to "C",
+    Double::class.java to "D",
+    Float::class.java to "F",
+    Int::class.java to "I",
+    Long::class.java to "J"
 )
 
 fun <T> Class<T>.descriptor(): String {
@@ -51,6 +36,8 @@ fun <T> Class<T>.descriptor(): String {
         }
 
         return sb.toString()
+    } else if (this == Void::class.java) {
+        return "V"
     }
 
     return "L" + path() + ";"

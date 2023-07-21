@@ -1,3 +1,5 @@
+@file:Suppress("FunctionName")
+
 package katartal.model.cls
 
 import katartal.model.ByteCode
@@ -7,6 +9,7 @@ import katartal.model.field.FieldAccess.Companion.PRIVATE
 import katartal.model.field.FieldAccess.Companion.PUBLIC
 import katartal.model.field.FieldAccess.Companion.STATIC
 import katartal.model.field.FieldAccess.Companion.SYNTHETIC
+import katartal.model.field.FieldBuilder
 import katartal.model.method.CodeBuilder
 import katartal.model.method.MethodAccess
 import katartal.util.path
@@ -23,41 +26,46 @@ class EnumBuilder(enumName: String, access: ClassAccess) :
         return this
     }
 
+    private val enumValues = mutableListOf<FieldBuilder>()
+    private val initCodeByValue = mutableMapOf<String, CodeBuilder.() -> Unit>()
+    
     fun _value(name: String, ctrCode: CodeBuilder.() -> Unit = {}) {
-        _field(name, "L${className};", PUBLIC + STATIC + FINAL + ENUM)
-    }
+        enumValues += _field(name, "L${className};", PUBLIC + STATIC + FINAL + ENUM)
+        initCodeByValue[name] = ctrCode
+    }    
 
     override fun flush() {
         _field("\$VALUES", "[L$className;", PRIVATE + STATIC + FINAL + SYNTHETIC)
 
-        val ctor =
-            _constructor(listOf("name" to String::class.java, "ordinal" to Int::class.java), MethodAccess.PRIVATE) {
-                _code {
-                    _instruction(ByteCode.ALOAD_0)
-                    _instruction(ByteCode.ALOAD_1)
-                    _instruction(ByteCode.ILOAD_2)
+        var ctor = methodBuilders.find { it.ctr }           
+        if(ctor == null) {
+            ctor =
+                _constructor(listOf("name" to String::class.java, "ordinal" to Int::class.java), MethodAccess.PRIVATE) {
+                    _code {
+                        _instruction(ByteCode.ALOAD_0)
+                        _instruction(ByteCode.ALOAD_1)
+                        _instruction(ByteCode.ILOAD_2)
 
-                    _instruction(ByteCode.INVOKESPECIAL) {
-                        _indexU2(constantPool.writeMethodRef("java/lang/Enum", "<init>", "(Ljava/lang/String;I)V"))
+                        _instruction(ByteCode.INVOKESPECIAL) {
+                            _indexU2(constantPool.writeMethodRef("java/lang/Enum", "<init>", "(Ljava/lang/String;I)V"))
+                        }
+
+                        _return()
                     }
-
-                    _return()
                 }
-            }
+        }
 
         // Skip $VALUES field
-        val nonSyntheticFields = fieldBuilders.filter { !it.access[SYNTHETIC] }
-
         _method("\$values", access = MethodAccess.PRIVATE + MethodAccess.STATIC + MethodAccess.SYNTHETIC) {
             _code {
-                _iconst(nonSyntheticFields.size)
+                _loadIntOnStack(enumValues.size)
                 _instruction(ByteCode.ANEWARRAY) {
                     _indexU2(constantPool.writeClass(className))
                 }
 
-                for (field in nonSyntheticFields.withIndex()) {
+                for (field in enumValues.withIndex()) {
                     _instruction(ByteCode.DUP)
-                    _iconst(field.index)
+                    _loadIntOnStack(field.index)
                     _getstatic(className, field.value.name, "L${className};")
                     _instruction(ByteCode.AASTORE)
                 }
@@ -85,14 +93,19 @@ class EnumBuilder(enumName: String, access: ClassAccess) :
         val staticInitDefinedByUser = methodBuilders.find { it.name == "<clinit>" } != null
         if (!staticInitDefinedByUser) {
             _method("<clinit>", access = MethodAccess.STATIC) {
-                for (field in nonSyntheticFields.withIndex()) {
+                for (field in enumValues.withIndex()) {
                     _code {
                         _instruction(ByteCode.NEW) {
                             _indexU2(constantPool.writeClass(className))
                         }
                         _instruction(ByteCode.DUP)
                         _ldc(field.value.name)
-                        _iconst(field.index)
+                        _loadIntOnStack(field.index)
+                        
+                        val code = initCodeByValue[field.value.name]
+                        if(code != null) {
+                            this.run(code)
+                        }
 
                         _instruction(ByteCode.INVOKESPECIAL) {
                             _indexU2(constantPool.writeMethodRef(className, "<init>", ctor.descriptorCpIndex))

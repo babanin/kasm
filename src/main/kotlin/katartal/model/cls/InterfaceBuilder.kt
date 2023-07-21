@@ -3,7 +3,7 @@ package katartal.model.cls
 import katartal.util.path
 
 class InterfaceBuilder(name: String, access: ClassAccess, parent: String = "java/lang/Object") :
-    CommonClassBuilder<InterfaceBuilder>(name, access, parent) {
+    CommonClassBuilder<InterfaceBuilder>(name, access + ClassAccess.INTERFACE + ClassAccess.ABSTRACT, parent) {
 
     infix fun extends(parentCls: String): InterfaceBuilder {
         this.parentClassNameIdx = constantPool.writeClass(parentCls)

@@ -11,7 +11,10 @@ package katartal.model
  */
 enum class ByteCode(
     val opcode: UByte,
+    
     val stackChange: Int = 0,
+    val resetStack: Int? = null,
+    
     val expectedParameters: Int = 0
 ) {
     /**
@@ -295,7 +298,7 @@ enum class ByteCode(
      * Load a reference onto the stack from local variable 1
      * → objectref
      */
-    ALOAD_1(0x2Bu, stackChange = 1), // 43
+    ALOAD_1(0x2Bu, stackChange = 1, expectedParameters = 0), // 43
 
     /**
      * Load a reference onto the stack from local variable 2
@@ -506,7 +509,12 @@ enum class ByteCode(
     LADD(97u),
     FADD(98u),
     DADD(99u),
-    ISUB(100u, stackChange = -1),
+
+    /**
+     * int subtract
+     * value1, value2 → result
+     */
+    ISUB(100u, stackChange = -1, expectedParameters = 0),
     LSUB(101u),
     FSUB(102u),
     DSUB(103u),
@@ -518,26 +526,36 @@ enum class ByteCode(
     LDIV(109u),
     FDIV(110u),
     DDIV(111u),
-    IREM(112u, stackChange = -1),
-    LREM(113u),
-    FREM(114u),
-    DREM(115u),
-    INEG(116u),
-    LNEG(117u),
-    FNEG(118u),
-    DNEG(119u),
-    ISHL(120u),
-    LSHL(121u),
-    ISHR(122u),
-    LSHR(123u),
-    IUSHR(124u),
-    LUSHR(125u),
-    IAND(126u),
-    LAND(127u),
-    IOR(128u),
-    LOR(129u),
-    IXOR(130u),
-    LXOR(131u),
+
+    /**
+     * Logical int remainder
+     * value1, value2 → result
+     */
+    IREM(0x70u, stackChange = -1, expectedParameters = 0), // 112
+
+    /**
+     * Logical long remainder
+     * value1, value2 → result
+     */
+    LREM(0x71u, stackChange = -1, expectedParameters = 0), // 113
+    FREM(0x72u), // 114
+    DREM(0x73u), // 115
+    INEG(0x74u), // 116
+    LNEG(117u), // 117
+    FNEG(118u), // 118
+    DNEG(119u), // 119
+    ISHL(120u), // 120
+    LSHL(121u), // 121
+    ISHR(122u), // 122
+    LSHR(123u), // 123
+    IUSHR(124u), // 124
+    LUSHR(125u), // 125
+    IAND(126u), // 126
+    LAND(127u), // 127
+    IOR(128u), // 128
+    LOR(129u), // 129
+    IXOR(130u), // 130
+    LXOR(131u), // 131
 
     /**
      * Increment local variable #index by signed byte const
@@ -545,8 +563,8 @@ enum class ByteCode(
      * @param index
      * @param const
      */
-    IINC(132u, expectedParameters = 2),
-    I2L(133u),
+    IINC(132u, expectedParameters = 2), // 132
+    I2L(133u), // 133
     I2F(134u),
     I2D(135u),
     L2I(136u),
@@ -598,7 +616,7 @@ enum class ByteCode(
      * @param branchbyte1
      * @param branchbyte2
      */
-    IF_ICMPGT(163u),
+    IF_ICMPGT(163u, stackChange = -2, expectedParameters = 2),
     IF_ICMPLE(164u),
     IF_ACMPEQ(165u),
     IF_ACMPNE(166u),
@@ -615,12 +633,42 @@ enum class ByteCode(
     RET(169u),
     TABLESWITCH(170u),
     LOOKUPSWITCH(171u),
-    IRETURN(172u),
-    LRETURN(173u),
-    FRETURN(174u),
-    DRETURN(175u),
-    ARETURN(176u),
-    RETURN(177u),
+
+    /**
+     * Return an integer from a method
+     * value → [empty]
+     */
+    IRETURN(0xACu, resetStack = 0), // 172
+
+    /**
+     * Return a long from a method
+     * value → [empty]
+     */
+    LRETURN(0xADu), // 173
+
+    /**
+     * Return a floa from a method
+     * value → [empty]
+     */
+    FRETURN(0xAEu), // 174
+
+    /**
+     * Return a double from a method
+     * value → [empty]
+     */
+    DRETURN(0xAFu), // 175
+
+    /**
+     * Return a reference from a method
+     * value → [empty]
+     */
+    ARETURN(0xB0u, resetStack = 0), // 176
+
+    /**
+     * Return void from method
+     * → [empty]
+     */
+    RETURN(0xB1u), // 177
 
     /**
      * Get a static field value of a class, where the field is identified by field reference in the constant pool index
@@ -636,7 +684,14 @@ enum class ByteCode(
      * @param indexbyte2
      */
     PUTSTATIC(0xB3u, stackChange = -1, expectedParameters = 2), // 179
-    GETFIELD(180u),
+
+    /**
+     * Get a field value of an object objectref, where the field is identified by field reference in the constant pool index
+     * objectref → value
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    GETFIELD(0xB4u, stackChange = 0, expectedParameters = 2), // 180
 
     /**
      * Set field to value in an object objectref, where the field is identified by a field reference index in constant pool
@@ -644,8 +699,8 @@ enum class ByteCode(
      * @param indexbyte1
      * @param indexbyte2
      */
-    PUTFIELD(181u, stackChange = -2, expectedParameters = 2),
-    INVOKEVIRTUAL(182u),
+    PUTFIELD(0xB5u, stackChange = -2, expectedParameters = 2), // 181
+    INVOKEVIRTUAL(0xB6u), // 182
 
     /**
      * Invoke instance method on object objectref and puts the result on the stack (might be void).
@@ -654,7 +709,7 @@ enum class ByteCode(
      * @param indexbyte1
      * @param indexbyte2
      */
-    INVOKESPECIAL(0xB7u, expectedParameters = 2), // 183
+    INVOKESPECIAL(0xB7u, resetStack = 1,  expectedParameters = 2), // 183
 
     /**
      * Invoke a static method and puts the result on the stack (might be void); 
@@ -662,9 +717,16 @@ enum class ByteCode(
      * @param indexbyte1
      * @param indexbyte2
      */
-    INVOKESTATIC(0xB8u, expectedParameters = 2), // 184
-    INVOKEINTERFACE(185u),
-    INVOKEDYNAMIC(186u),
+    INVOKESTATIC(0xB8u, resetStack = 1, expectedParameters = 2), // 184
+    INVOKEINTERFACE(0xB9u), // 185
+
+    /**
+     * Invokes a dynamic method and puts the result on the stack (might be void); 
+     * the method is identified by method reference index in constant pool
+     * @param indexbyte1
+     * @param indexbyte2
+     */
+    INVOKEDYNAMIC(0xBAu, resetStack = 1), // 186
 
     /**
      * Create new object of type identified by class reference in constant pool index
@@ -672,14 +734,14 @@ enum class ByteCode(
      * @param indexbyte1
      * @param indexbyte2
      */
-    NEW(0xBBu), // 187
+    NEW(0xBBu, stackChange = 1, expectedParameters = 2), // 187
 
     /**
      * Create new array with count elements of primitive type identified by atype
      * count → arrayref
      * @param 1: atype
      */
-    NEWARRAY(188u, expectedParameters = 1),
+    NEWARRAY(188u, stackChange = 0, expectedParameters = 1),
 
     /**
      * Create a new array of references of length count and component type identified by the class reference index
@@ -687,7 +749,7 @@ enum class ByteCode(
      * @param indexbyte1
      * @param indexbyte2
      */
-    ANEWARRAY(189u),
+    ANEWARRAY(189u, stackChange = 0, expectedParameters = 2),
     ARRAYLENGTH(190u),
     ATHROW(191u),
 

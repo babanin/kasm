@@ -11,6 +11,12 @@ class EnhancedClassAssertions(actual: Class<*>?) :
         assertIsEnum()
         return myself
     }
+    
+    fun isRecord(): EnhancedClassAssertions {
+        isNotNull()
+        assertIsRecord()
+        return myself
+    }
 
     fun hasFieldWithType(fieldName: String, fieldClass: Class<*>): EnhancedClassAssertions {
         isNotNull
@@ -78,8 +84,20 @@ class EnhancedClassAssertions(actual: Class<*>?) :
     }
 
     private fun assertIsNotEnum() {
-        if (!actual.isEnum) {
+        if (actual.isEnum) {
             throw assertionError(ShouldBeEnum.shouldNotBeEnum(actual))
+        }
+    }
+
+    private fun assertIsRecord() {
+        if (!actual.isRecord) {
+            throw assertionError(ShouldBeRecord.shouldBeRecord(actual))
+        }
+    }
+
+    private fun assertIsNotRecord() {
+        if (actual.isRecord) {
+            throw assertionError(ShouldBeRecord.shouldNotBeRecord(actual))
         }
     }
 }

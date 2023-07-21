@@ -9,7 +9,7 @@ import katartal.model.field.FieldAccess.Companion.VOLATILE
 import katartal.util.ByteArrayClassLoader
 import katartal.util.descriptor
 import org.junit.jupiter.api.Test
-import util.assertThat
+import util.Assertions.assertThat
 import java.io.File
 import java.io.FileOutputStream
 
@@ -20,7 +20,7 @@ class ClassFieldGenerationTest {
         val klass = _class("Test") {
             _field("primitiveLong", Long::class.java.descriptor(), PRIVATE + FINAL)
             _field("boxedLong", java.lang.Long::class.java.descriptor(), PRIVATE + VOLATILE)
-            
+
             _field("arrayOfInt", IntArray::class.java, PROTECTED + STATIC)
         }
 
@@ -28,7 +28,7 @@ class ClassFieldGenerationTest {
         val clsBytes = PlainClassGenerator().toByteArray(klass)
 
         print(clsBytes)
-        
+
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
         val loadedClass = classLoader.loadClass(klass.className, clsBytes)
