@@ -64,7 +64,7 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
         name: String,
         parameters: List<Pair<String, Any>> = listOf(),
         access: MethodAccess = MethodAccess.PUBLIC,
-        init: MethodBuilder.() -> Unit
+        init: MethodBuilder.() -> Unit = {}
     ): MethodBuilder {
         val methodBuilder =
             MethodBuilder(name, access, parameters = parameters, constantPool = constantPool, currentClass = name)
@@ -102,6 +102,10 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
         return boostrapMethodBuilder
     }
 
+    fun _annotate(annotation: Class<*>) {
+        
+    }    
+    
     open fun flush() {
         methodBuilders.forEach { it.flush() }
         fieldBuilders.forEach { it.flush() }

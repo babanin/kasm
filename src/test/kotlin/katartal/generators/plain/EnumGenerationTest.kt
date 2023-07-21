@@ -1,13 +1,11 @@
 package katartal.generators.plain
 
 import katartal.dsl._enum
-import katartal.model.ByteCode
 import katartal.model.ByteCode.*
 import katartal.model.field.FieldAccess
 import katartal.util.ByteArrayClassLoader
-import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
-import util.assertThat
+import util.Assertions.assertThat
 import java.io.File
 import java.io.FileOutputStream
 
@@ -155,8 +153,8 @@ class EnumGenerationTest {
                 nums += value.javaClass.getMethod("getNum").invoke(value) as Int
             }
         }
-        
-        Assertions.assertThat(nums)
+
+        assertThat(nums)
             .containsExactly(1000, 10000, 100000)
     }
 }

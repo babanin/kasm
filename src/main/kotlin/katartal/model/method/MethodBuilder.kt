@@ -3,8 +3,9 @@ package katartal.model.method
 import katartal.model.CPoolIndex
 import katartal.model.ConstantPool
 import katartal.model.attribute.*
+import katartal.model.method.MethodAccess.Companion.ABSTRACT
+import katartal.model.method.MethodAccess.Companion.NATIVE
 import katartal.model.method.MethodAccess.Companion.STATIC
-import katartal.model.method.instruction.InstructionBuilder
 import katartal.util.DynamicByteArray
 import katartal.util.descriptor
 import katartal.util.path
@@ -17,7 +18,6 @@ class MethodBuilder(
     private val currentClass: String,
     private val constantPool: ConstantPool
 ) {
-
     val name: String
         get() = constantPool.readUtf8(nameCpIndex)!!
 
@@ -76,7 +76,11 @@ class MethodBuilder(
         codeBuilder.init()
         return codeBuilder
     }
-    
+
+    fun _annotate(annotation: Class<*>) {
+
+    }
+
     infix fun returns(returnCls: String): MethodBuilder {
         descriptorCpIndex = constantPool.writeUtf8("${parametersDescriptor}$returnCls")
         return this
@@ -97,14 +101,16 @@ class MethodBuilder(
     }
 
     fun flush() {
-        val codeBuilder =
-            if (codeBuilders.isEmpty()) _code { _return() }
-            else codeBuilders.reduce { acc, codeBuilder -> acc + codeBuilder }
+        if (!(access[ABSTRACT] || access[NATIVE])) {
+            val codeBuilder =
+                if (codeBuilders.isEmpty()) _code { _return() }
+                else codeBuilders.reduce { acc, codeBuilder -> acc + codeBuilder }
 
-        codeBuilder.flush()
+            codeBuilder.flush()
 
-        attributes += buildCodeAttribute(codeBuilder)
-        attributes += buildLocalVariableTable(codeBuilder)
+            attributes += buildCodeAttribute(codeBuilder)
+            attributes += buildLocalVariableTable(codeBuilder)
+        }
     }
 
     private fun buildStackMapFrameTable(codeBuilder: CodeBuilder): StackMapTableAttribute {
@@ -177,7 +183,7 @@ class MethodBuilder(
         return CodeAttribute(
             constantPool.writeUtf8("Code"),
             codeBuilder.maxStack.toUShort(),
-            (parameters.size + variables.size + (if(access[STATIC]) 0 else 1)).toUShort(),
+            (parameters.size + variables.size + (if (access[STATIC]) 0 else 1)).toUShort(),
             codeArray.toByteArray(),
             attributes = listOf(buildStackMapFrameTable(codeBuilder))
         )
@@ -224,7 +230,7 @@ class MethodBuilder(
                 variable.descriptor,
                 index
             )
-            
+
             index++
         }
 

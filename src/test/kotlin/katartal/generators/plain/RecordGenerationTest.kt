@@ -1,20 +1,15 @@
 package katartal.generators.plain
 
-import katartal.dsl._enum
 import katartal.dsl._record
-import katartal.model.ByteCode
-import katartal.model.ByteCode.*
-import katartal.model.field.FieldAccess
 import katartal.util.ByteArrayClassLoader
-import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
-import util.assertThat
+import util.Assertions.assertThat
 import java.io.File
 import java.io.FileOutputStream
 
 class RecordGenerationTest {
     /**
-     * public enum EmptyEnum {
+     * public record Point(int x, int y) {
      * }
      */
     @Test
@@ -24,7 +19,6 @@ class RecordGenerationTest {
 
         // when
         val clsBytes = PlainClassGenerator().toByteArray(klass)
-        print(clsBytes)
 
         // then
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
@@ -33,6 +27,33 @@ class RecordGenerationTest {
         assertThat(toClass)
             .isNotNull
             .isRecord()
+
+        assertThat(toClass.recordComponents)
+            .hasSize(2)
+    }
+
+    /**
+     * public record Empty() {
+     * }
+     */
+    @Test
+    fun shouldGenerateEmptyRecord() {
+        // given
+        val klass = _record("Point")
+
+        // when
+        val clsBytes = PlainClassGenerator().toByteArray(klass)
+
+        // then
+        val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
+        val toClass = classLoader.loadClass(klass.className, clsBytes)
+
+        assertThat(toClass)
+            .isNotNull
+            .isRecord()
+
+        assertThat(toClass.recordComponents)
+            .isEmpty()
     }
 
     fun print(array: ByteArray) {

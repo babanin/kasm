@@ -3,6 +3,8 @@ package katartal.model.cls
 import katartal.model.ByteCode
 import katartal.model.ConstantPool.RefKind.REF_getField
 import katartal.model.ConstantPool.RefKind.REF_invokeStatic
+import katartal.model.attribute.RecordAttribute
+import katartal.model.attribute.RecordComponentInfo
 import katartal.model.field.FieldAccess
 import katartal.util.descriptor
 import katartal.util.path
@@ -12,12 +14,14 @@ class RecordBuilder(
     parameters: List<Pair<String, Any>> = listOf(),
     access: ClassAccess = ClassAccess.PUBLIC
 ) :
-    CommonClassBuilder<RecordBuilder>(name, access, "java/lang/Record") {
+    CommonClassBuilder<RecordBuilder>(name, access + ClassAccess.FINAL + ClassAccess.SUPER, "java/lang/Record") {
+
+    private data class Field(val name: String, val type: String)
+
+    private val fields: List<Field>
 
     init {
-        data class Field(val name: String, val type: String)
-
-        val fields = parameters.map {
+        fields = parameters.map {
             Field(
                 it.first, when (it.second) {
                     is Class<*> -> (it.second as Class<*>).descriptor()
@@ -32,7 +36,7 @@ class RecordBuilder(
             _method(field.name) {
                 _code {
                     _instruction(ByteCode.ALOAD_0)
-                    
+
                     _instruction(ByteCode.GETFIELD) {
                         _indexU2(constantPool.writeFieldRef(className, field.name, field.type))
                     }
@@ -43,8 +47,8 @@ class RecordBuilder(
             } returns field.type
 
         }
-        
-        _constructor(parameters) {            
+
+        _constructor(parameters) {
             _code {
                 _instruction(ByteCode.ALOAD_0)
 
@@ -57,7 +61,7 @@ class RecordBuilder(
                     _instruction(ByteCode.ILOAD_1)
                     _instruction(ByteCode.PUTFIELD) {
                         _indexU2(constantPool.writeFieldRef(className, field.name, field.type))
-                    }                    
+                    }
                 }
 
                 _return()
@@ -144,5 +148,17 @@ class RecordBuilder(
         return this
     }
 
+    override fun flush() {
+        attributes += buildRecordAttribute()
+        
+        super.flush()
+    }
 
+    private fun buildRecordAttribute(): RecordAttribute {
+        val components = fields.map {
+            RecordComponentInfo(constantPool.writeUtf8(it.name), constantPool.writeUtf8(it.type), listOf())
+        }
+
+        return RecordAttribute(constantPool.writeUtf8("Record"), components)
+    }
 }

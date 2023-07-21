@@ -1,7 +1,9 @@
 package katartal.dsl
 
 import katartal.model.cls.*
+import katartal.model.cls.ClassAccess.Companion.ABSTRACT
 import katartal.model.cls.ClassAccess.Companion.FINAL
+import katartal.model.cls.ClassAccess.Companion.INTERFACE
 import katartal.model.cls.ClassAccess.Companion.PUBLIC
 import katartal.model.cls.ClassAccess.Companion.SUPER
 
@@ -35,10 +37,10 @@ fun _enum(name: String, init: EnumBuilder.() -> Unit = {}): EnumBuilder {
 
 fun _record(
     name: String,
-    parameters: List<Pair<String, Any>>,
+    parameters: List<Pair<String, Any>> = listOf(),
     init: RecordBuilder.() -> Unit = {}
 ): RecordBuilder {
-    val recordBuilder = RecordBuilder(name, parameters, PUBLIC + FINAL + SUPER)
+    val recordBuilder = RecordBuilder(name, parameters, PUBLIC)
     recordBuilder.init()
     recordBuilder.flush()
     return recordBuilder

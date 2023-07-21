@@ -8,5 +8,6 @@ import java.io.FileNotFoundException
 import java.io.Serializable
 
 class AnnotationGenerationTest {
-  
+
+    
 }

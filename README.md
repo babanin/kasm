@@ -18,6 +18,103 @@ _class("Test") {
 }
 ```
 
+### Record
+Following record:
+```java
+public record Point(int x, int y) { 
+}
+```
+
+Can be created using following Katartal code:
+```kotlin
+_record("Point", listOf("x" to Int::class.java, "y" to Int::class.java))
+```
+
+### Enum
+Enum with simple values:
+```java
+public enum EnumWithPlainValues {
+    A, B, C, D;
+}
+```
+Using Katartal DSL:
+```kotlin
+_enum("EnumWithPlainValues") {
+    _value("A")
+    _value("B")
+    _value("C")
+    _value("D")
+}
+
+```
+
+However, if values have fields, implementation becomes trickier. For example:
+```java
+public enum EnumWithFields {
+    A(1000), B(10000), C(100000);
+    
+    private final int num;
+    
+    EnumWithFields(int num) {
+        this.num = num;
+    }
+
+    public int getNum() {
+        return num;
+    }
+}
+```
+
+We have to implement constructor and partial field initializer by ourselves:
+
+```kotlin
+_enum("EnumWithFields") {
+    _value("A") {
+        _loadIntOnStack(1000)
+    }
+
+    _value("B") {
+        _loadIntOnStack(10000)
+    }
+
+    _value("C") {
+        _loadIntOnStack(100000)
+    }
+
+    _field("num", Int::class.java, FieldAccess.PRIVATE)
+
+    _method("getNum") {
+        _code {
+            _instruction(ALOAD_0)
+            _instruction(GETFIELD) {
+                _indexU2(constantPool.writeFieldRef(className, "num", "I"))
+            }
+            _instruction(IRETURN)
+        }
+    } returns Int::class.java
+
+    _constructor(listOf("name" to String::class.java, "ordinal" to Int::class.java, "num" to Int::class.java)) {
+        _code {
+            _instruction(ALOAD_0)
+            _instruction(ALOAD_1)
+            _instruction(ILOAD_2)
+
+            _instruction(INVOKESPECIAL) {
+                _indexU2(constantPool.writeMethodRef("java/lang/Enum", "<init>", "(Ljava/lang/String;I)V"))
+            }
+
+            _instruction(ALOAD_0)
+            _instruction(ILOAD_3)
+            _instruction(PUTFIELD) {
+                _indexU2(constantPool.writeFieldRef(className, "num", "I"))
+            }
+
+            _return()
+        }
+    }
+}
+```
+
 ### FizzBuzz
 
 Solution in Java:

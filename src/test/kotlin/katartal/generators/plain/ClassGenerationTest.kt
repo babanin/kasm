@@ -11,9 +11,8 @@ import katartal.model.method.plugins.branching._if
 import katartal.model.method.plugins.lvt.releaseVariable
 import katartal.model.method.plugins.lvt.variable
 import katartal.util.ByteArrayClassLoader
-import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
-import util.assertThat
+import util.Assertions.assertThat
 import java.io.*
 
 class ClassGenerationTest {
@@ -97,7 +96,7 @@ class ClassGenerationTest {
         val klass = _class("Test") {
             _method("equals", listOf("other" to Object::class.java)) {
                 _code {
-                    _instruction(ILOAD_1)
+                    _loadIntOnStack(1)
                     _return(Boolean::class.java)
                 }
             } returns Boolean::class.java
@@ -121,7 +120,7 @@ class ClassGenerationTest {
         val klass = _class("Test") {
             _method("equals", listOf("other" to Object::class.java)) {
                 _code {
-                    _instruction(ILOAD_1)
+                    _loadIntOnStack(1)
                     _return("Z")
                 }
             } returns Boolean::class.java throws FileNotFoundException::class.java
@@ -281,7 +280,7 @@ class ClassGenerationTest {
 
         val fizzBuzzMethod = toClass.getDeclaredMethod("fizzBuzz", Int::class.java)
         val result: Array<String> = fizzBuzzMethod.invoke(null, 100) as Array<String>
-        Assertions.assertThat(result)
+        assertThat(result)
             .hasSize(100)
             .contains("Fizz", "Buzz", "FizzBuzz")
     }
@@ -370,7 +369,7 @@ class ClassGenerationTest {
 
         val fizzBuzzMethod = toClass.getDeclaredMethod("firstNIntegers", Int::class.java)
         val result: IntArray = fizzBuzzMethod.invoke(null, 15) as IntArray
-        Assertions.assertThat(result)
+        assertThat(result)
             .containsExactly(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
     }
 
@@ -426,7 +425,52 @@ class ClassGenerationTest {
 
         val fizzBuzzMethod = toClass.getDeclaredMethod("isOdd", Int::class.java)
         val result = fizzBuzzMethod.invoke(null, 15) as Boolean
-        Assertions.assertThat(result).isFalse()
+        assertThat(result)
+            .isFalse
+    }
+
+
+    @Target(AnnotationTarget.CLASS)
+    @Retention(AnnotationRetention.RUNTIME)
+    @MustBeDocumented
+    annotation class ClassLevelAnnotation
+
+    @Target(AnnotationTarget.FUNCTION)
+    @Retention(AnnotationRetention.RUNTIME)
+    @MustBeDocumented
+    annotation class MethodLevelAnnotation
+
+    @Target(AnnotationTarget.FIELD)
+    @Retention(AnnotationRetention.RUNTIME)
+    @MustBeDocumented
+    annotation class FieldLevelAnnotation
+
+    @Test
+    fun shouldGenerateClassWithAnnotations() {
+        // given
+        val klass = _class("Counter") {
+            _field("count", Int::class.java) {
+                _annotate(FieldLevelAnnotation::class.java)
+            }
+
+            _method("isOdd") {
+                _annotate(MethodLevelAnnotation::class.java)
+            } 
+
+            _annotate(ClassLevelAnnotation::class.java)
+        }
+
+        // when
+        val clsBytes = PlainClassGenerator().toByteArray(klass)
+
+        print(clsBytes)
+
+        // then
+        val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
+        val toClass = classLoader.loadClass(klass.className, clsBytes)
+
+        assertThat(toClass)
+            .isNotNull
     }
 
     fun print(array: ByteArray) {

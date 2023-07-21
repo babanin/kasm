@@ -21,6 +21,10 @@ class FieldBuilder(
         this.descriptorCpIndex = constantPool.writeUtf8(descriptor)
     }
 
+    fun _annotate(annotation: Class<*>) {
+
+    }
+
     fun flush() {
 
     }
