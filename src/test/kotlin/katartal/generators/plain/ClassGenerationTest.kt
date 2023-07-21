@@ -133,7 +133,12 @@ class ClassGenerationTest {
         val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
         val toClass = classLoader.loadClass(klass.className, clsBytes)
 
-        assertThat(toClass).isNotNull
+        assertThat(toClass)
+            .isNotNull
+
+        val equalsMethod = toClass.getDeclaredMethod("equals", Object::class.java)
+        assertThat(equalsMethod.exceptionTypes)
+            .contains(FileNotFoundException::class.java);
     }
 
     @Test

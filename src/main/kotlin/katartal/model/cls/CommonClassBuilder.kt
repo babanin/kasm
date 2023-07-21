@@ -4,9 +4,9 @@ import katartal.model.BoostrapMethodBuilder
 import katartal.model.CPoolIndex
 import katartal.model.ConstantPool
 import katartal.model.JavaVersion
-import katartal.model.attribute.Attribute
 import katartal.model.attribute.BootstrapMethod
 import katartal.model.attribute.BootstrapMethodAttribute
+import katartal.model.attribute.ClassAttribute
 import katartal.model.field.FieldAccess
 import katartal.model.field.FieldBuilder
 import katartal.model.method.MethodAccess
@@ -29,13 +29,12 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
     val methodBuilders: MutableList<MethodBuilder> = mutableListOf()
     val boostrapMethodBuilders: MutableList<BoostrapMethodBuilder> = mutableListOf()
 
-
     val classNameIdx: CPoolIndex
     var parentClassNameIdx: CPoolIndex
 
     val constantPool = ConstantPool()
 
-    val attributes: MutableList<Attribute> = mutableListOf()
+    val attributes: MutableList<ClassAttribute> = mutableListOf()
 
     init {
         this.classNameIdx = constantPool.writeClass(className)
@@ -95,7 +94,13 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
         return fieldBuilder
     }
 
-    fun _bootstrapMethods(kind: ConstantPool.RefKind, cls: String, name: String, type: String, init: BoostrapMethodBuilder.() -> Unit): BoostrapMethodBuilder {
+    fun _bootstrapMethods(
+        kind: ConstantPool.RefKind,
+        cls: String,
+        name: String,
+        type: String,
+        init: BoostrapMethodBuilder.() -> Unit
+    ): BoostrapMethodBuilder {
         val boostrapMethodBuilder = BoostrapMethodBuilder(kind, cls, name, type, boostrapMethodBuilders.size.toUShort())
         boostrapMethodBuilders += boostrapMethodBuilder
         boostrapMethodBuilder.init()
@@ -103,13 +108,13 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
     }
 
     fun _annotate(annotation: Class<*>) {
-        
-    }    
-    
+
+    }
+
     open fun flush() {
         methodBuilders.forEach { it.flush() }
         fieldBuilders.forEach { it.flush() }
-        
+
         attributes += buildBootstrapMethodAttribute()
 
         println("Constant pool:")
@@ -122,15 +127,21 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
         val methods = boostrapMethodBuilders.map {
             val bootstrapMethodRef =
                 constantPool.writeMethodHandle(it.kind, constantPool.writeMethodRef(it.cls, it.name, it.type))
-            
+
             val args = it.args.map { arg ->
-                when(arg) {
+                when (arg) {
                     is BoostrapMethodBuilder.Cls -> constantPool.writeClass(arg.cls)
-                    is BoostrapMethodBuilder.MH -> constantPool.writeMethodHandle(arg.refKind, arg.cls, arg.name, arg.type)
+                    is BoostrapMethodBuilder.MH -> constantPool.writeMethodHandle(
+                        arg.refKind,
+                        arg.cls,
+                        arg.name,
+                        arg.type
+                    )
+
                     is BoostrapMethodBuilder.Str -> constantPool.writeString(arg.value)
                 }
             }
-            
+
             BootstrapMethod(bootstrapMethodRef, args)
         }
 

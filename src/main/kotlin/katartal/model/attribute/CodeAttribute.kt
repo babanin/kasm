@@ -27,9 +27,9 @@ class CodeAttribute(
     private val maxLocals: UShort,
     private val code: ByteArray,
     private val exceptionTable: List<ExceptionEntry> = listOf(),
-    private val attributes: List<Attribute> = listOf()
+    private val attributes: List<MethodCodeAttribute> = listOf()
 ) :
-    Attribute(attributeNameIndex) {
+    Attribute(attributeNameIndex), MethodAttribute {
 
     override fun generateAttributeData(): ByteArray {
         val codeAttributeArray = DynamicByteArray()

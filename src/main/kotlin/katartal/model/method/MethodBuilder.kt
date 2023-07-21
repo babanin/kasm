@@ -27,7 +27,7 @@ class MethodBuilder(
     val nameCpIndex: CPoolIndex
     var descriptorCpIndex: CPoolIndex
 
-    val attributes: MutableList<Attribute> = mutableListOf()
+    val attributes: MutableList<MethodAttribute> = mutableListOf()
     private val labels = mutableMapOf<String, Label>()
     private val variables = mutableListOf<LocalVariable>()
 
@@ -111,9 +111,18 @@ class MethodBuilder(
             attributes += buildCodeAttribute(codeBuilder)
             attributes += buildLocalVariableTable(codeBuilder)
         }
+        
+        if(throws.isNotEmpty()) {
+            attributes += buildMethodExceptionsAttribute()
+        }
     }
 
-    private fun buildStackMapFrameTable(codeBuilder: CodeBuilder): StackMapTableAttribute {
+    private fun buildMethodExceptionsAttribute(): MethodExceptionsAttribute {
+        return MethodExceptionsAttribute(constantPool.writeUtf8("Exceptions"), 
+            throws.map(constantPool::writeClass))
+    }
+
+    private fun buildStackMapFrameTable(codeBuilder: CodeBuilder): MethodCodeAttribute {
         val entries = mutableListOf<StackMapFrameAttribute>()
 
         fun mapTypes(list: List<StackFrameBuilder.Type>): List<VerificationTypeInfo> {

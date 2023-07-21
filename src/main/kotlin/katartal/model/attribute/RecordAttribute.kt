@@ -18,8 +18,8 @@ import katartal.util.DynamicByteArray
  *     attribute_info attributes[attributes_count];
  * }
  */
-class RecordAttribute(attributeNameIdx: CPoolIndex, val components: List<RecordComponentInfo>) :
-    Attribute(attributeNameIdx) {
+class RecordAttribute(attributeNameIdx: CPoolIndex, private val components: List<RecordComponentInfo>) :
+    Attribute(attributeNameIdx), ClassAttribute {
 
     override fun generateAttributeData(): ByteArray {
         return DynamicByteArray().apply {

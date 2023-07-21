@@ -25,7 +25,7 @@ data class LocalVariableTableEntry(
  * }
  */
 class LocalVariableTableAttribute(attributeNameIndex: CPoolIndex, private val entries: List<LocalVariableTableEntry>) :
-    Attribute(attributeNameIndex) {
+    Attribute(attributeNameIndex), MethodAttribute {
     override fun generateAttributeData(): ByteArray {
         val localVarAttributeArray = DynamicByteArray()
         localVarAttributeArray.putU2(entries.size)
