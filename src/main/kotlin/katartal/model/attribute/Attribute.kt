@@ -16,3 +16,19 @@ sealed class Attribute(private val attributeNameIndex: CPoolIndex) {
 
     abstract fun generateAttributeData(): ByteArray
 }
+
+interface ClassAttribute {
+    fun toByteArray(): ByteArray
+}
+
+interface MethodAttribute {
+    fun toByteArray(): ByteArray
+}
+
+interface MethodCodeAttribute {
+    fun toByteArray(): ByteArray
+}
+
+interface FieldAttribute {
+    fun toByteArray(): ByteArray
+}

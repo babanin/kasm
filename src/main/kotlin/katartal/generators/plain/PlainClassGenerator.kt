@@ -34,7 +34,7 @@ class PlainClassGenerator : ClassGenerator {
 
         cls.putU2((clsBuilder.constantPool.size + 1).toUInt()) // constant pool size
         for (entry in clsBuilder.constantPool) {
-            cls.putByteArray(entry.toByteArray())
+            cls.putByteArray(entry.value.toByteArray())
         }
 
         cls.putU2(clsBuilder.access.opcode) // access flags
