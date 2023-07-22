@@ -32,3 +32,7 @@ interface MethodCodeAttribute {
 interface FieldAttribute {
     fun toByteArray(): ByteArray
 }
+
+interface RecordComponentAttribute {
+    fun toByteArray(): ByteArray
+}

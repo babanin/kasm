@@ -6,33 +6,41 @@ import katartal.model.ConstantPool.RefKind.REF_invokeStatic
 import katartal.model.attribute.RecordAttribute
 import katartal.model.attribute.RecordComponentInfo
 import katartal.model.field.FieldAccess
+import katartal.model.field.FieldBuilder
 import katartal.util.descriptor
 import katartal.util.path
 
 class RecordBuilder(
     name: String,
-    parameters: List<Pair<String, Any>> = listOf(),
     access: ClassAccess = ClassAccess.PUBLIC
 ) :
     CommonClassBuilder<RecordBuilder>(name, access + ClassAccess.FINAL + ClassAccess.SUPER, "java/lang/Record") {
 
-    private data class Field(val name: String, val type: String)
+    private val components = mutableListOf<Component>()
 
-    private val fields: List<Field>
+    private data class Component(val name: String, val type: String)
 
-    init {
-        fields = parameters.map {
-            Field(
-                it.first, when (it.second) {
-                    is Class<*> -> (it.second as Class<*>).descriptor()
-                    else -> it.second.toString()
-                }
-            )
-        }
+    fun _component(name: String, type: String, init: FieldBuilder.() -> Unit = {}): FieldBuilder {
+        components += Component(name, type)
+        return _field(name, type, FieldAccess.PRIVATE + FieldAccess.FINAL, init)
+    }
 
-        fields.forEach { _field(it.name, it.type, FieldAccess.PRIVATE + FieldAccess.FINAL) }
+    fun _component(name: String, type: Class<*>, init: FieldBuilder.() -> Unit = {}): FieldBuilder {
+        return _component(name, type.descriptor(), init)
+    }
 
-        for (field in fields) {
+    infix fun implements(interfaceCls: String): RecordBuilder {
+        this.implements += constantPool.writeClass(interfaceCls)
+        return this
+    }
+
+    infix fun <T : Any> implements(interfaceCls: Class<T>): RecordBuilder {
+        this.implements += constantPool.writeClass(interfaceCls.path())
+        return this
+    }
+
+    override fun flush() {
+        for (field in components) {
             _method(field.name) {
                 _code {
                     _instruction(ByteCode.ALOAD_0)
@@ -48,7 +56,7 @@ class RecordBuilder(
 
         }
 
-        _constructor(parameters) {
+        _constructor(components.map { Pair(it.name, it.type) }) {
             _code {
                 _instruction(ByteCode.ALOAD_0)
 
@@ -56,7 +64,7 @@ class RecordBuilder(
                     _indexU2(constantPool.writeMethodRef("java/lang/Record", "<init>", "()V"))
                 }
 
-                for (field in fields) {
+                for (field in components) {
                     _instruction(ByteCode.ALOAD_0)
                     _instruction(ByteCode.ILOAD_1)
                     _instruction(ByteCode.PUTFIELD) {
@@ -75,9 +83,9 @@ class RecordBuilder(
             "(Ljava/lang/invoke/MethodHandles\$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;"
         ) {
             _class(className)
-            _string(fields.joinToString(";") { it.name })
+            _string(components.joinToString(";") { it.name })
 
-            fields.forEach {
+            components.forEach {
                 _methodHandle(REF_getField, className, it.name, it.type)
             }
         }
@@ -136,26 +144,14 @@ class RecordBuilder(
                 }
             }
         } returns Boolean::class.java
-    }
 
-    infix fun implements(interfaceCls: String): RecordBuilder {
-        this.implements += constantPool.writeClass(interfaceCls)
-        return this
-    }
-
-    infix fun <T : Any> implements(interfaceCls: Class<T>): RecordBuilder {
-        this.implements += constantPool.writeClass(interfaceCls.path())
-        return this
-    }
-
-    override fun flush() {
         attributes += buildRecordAttribute()
-        
+
         super.flush()
     }
 
     private fun buildRecordAttribute(): RecordAttribute {
-        val components = fields.map {
+        val components = components.map {
             RecordComponentInfo(constantPool.writeUtf8(it.name), constantPool.writeUtf8(it.type), listOf())
         }
 
