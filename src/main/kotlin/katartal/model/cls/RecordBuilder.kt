@@ -8,7 +8,12 @@ import katartal.model.attribute.RecordComponentInfo
 import katartal.model.field.FieldAccess
 import katartal.model.field.FieldBuilder
 import katartal.util.descriptor
+import katartal.util.methodDescriptor
 import katartal.util.path
+import java.lang.invoke.MethodHandle
+import java.lang.invoke.MethodHandles.Lookup
+import java.lang.invoke.TypeDescriptor
+import java.lang.runtime.ObjectMethods
 
 class RecordBuilder(
     name: String,
@@ -78,9 +83,17 @@ class RecordBuilder(
 
         val objectMethodsBootstrap = _bootstrapMethods(
             REF_invokeStatic,
-            "java/lang/runtime/ObjectMethods",
+            ObjectMethods::class.java.path(),
             "bootstrap",
-            "(Ljava/lang/invoke/MethodHandles\$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;"
+            methodDescriptor(
+                returnType = Object::class.java,
+                Lookup::class.java,
+                String::class.java,
+                TypeDescriptor::class.java,
+                Class::class.java,
+                String::class.java,
+                Array<MethodHandle>::class.java
+            )
         ) {
             _class(className)
             _string(components.joinToString(";") { it.name })
