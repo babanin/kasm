@@ -20,4 +20,46 @@ data class FieldAccess(val opcode: UShort) {
     operator fun get(access: FieldAccess): Boolean {
         return (this.opcode and access.opcode) != 0.toUShort()
     }
+    
+    override fun toString(): String {
+        val accessBuilder = StringBuilder()
+        
+        if(this[PUBLIC]) {
+            accessBuilder.append(" public")
+        }
+        
+        if(this[PROTECTED]) {
+            accessBuilder.append(" protected")
+        }
+        
+        if(this[PRIVATE]) {
+            accessBuilder.append(" private")
+        }
+        
+        if(this[STATIC]) {
+            accessBuilder.append(" static")
+        }
+        
+        if(this[FINAL]) {
+            accessBuilder.append(" final")
+        }
+        
+        if(this[VOLATILE]) {
+            accessBuilder.append(" volatile")
+        }
+        
+        if(this[TRANSIENT]) {
+            accessBuilder.append(" transient")
+        }
+        
+        if(this[SYNTHETIC]) {
+            accessBuilder.append(" synthetic")
+        }
+        
+        if(this[ENUM]) {
+            accessBuilder.append(" enum")
+        }
+        
+        return "FieldAccess:$accessBuilder"
+    }
 }

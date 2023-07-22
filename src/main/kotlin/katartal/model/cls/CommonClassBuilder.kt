@@ -9,6 +9,7 @@ import katartal.model.attribute.BootstrapMethodAttribute
 import katartal.model.attribute.ClassAttribute
 import katartal.model.field.FieldAccess
 import katartal.model.field.FieldBuilder
+import katartal.model.field.StaticFieldBuilder
 import katartal.model.method.MethodAccess
 import katartal.model.method.MethodBuilder
 import katartal.util.descriptor
@@ -82,6 +83,27 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
         _field(name, descriptor.descriptor(), access, init)
     }
 
+    fun _staticField(
+        name: String,
+        descriptor: Class<*>,
+        access: FieldAccess = FieldAccess.PUBLIC,
+        init: StaticFieldBuilder.() -> Unit = {}
+    ) {
+        _staticField(name, descriptor.descriptor(), access, init)
+    }
+
+    fun _staticField(
+        name: String,
+        descriptor: String,
+        access: FieldAccess = FieldAccess.PUBLIC,
+        init: StaticFieldBuilder.() -> Unit = {}
+    ): StaticFieldBuilder {
+        val fieldBuilder = StaticFieldBuilder(name, descriptor, access, constantPool)
+        fieldBuilders += fieldBuilder
+        fieldBuilder.init()
+        return fieldBuilder
+    }
+
     fun _field(
         name: String,
         descriptor: String,
@@ -118,8 +140,8 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
         attributes += buildBootstrapMethodAttribute()
 
         println("Constant pool:")
-        for ((idx, entry) in constantPool.withIndex()) {
-            println("\t ${idx + 1} \t $entry")
+        for ((index, entry) in constantPool) {
+            System.out.printf("\t%-5d%-8s%n", index.toInt(), entry)
         }
     }
 

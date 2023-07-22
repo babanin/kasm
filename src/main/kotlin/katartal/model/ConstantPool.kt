@@ -4,9 +4,11 @@ import katartal.model.ConstantPool.RefKind.*
 import katartal.util.DynamicByteArray
 
 @Suppress("ClassName")
-class ConstantPool : Iterable<ConstantPool.ConstantPoolEntry> {
-    private val entries: MutableList<ConstantPoolEntry> = mutableListOf()
+class ConstantPool : Iterable<MutableMap.MutableEntry<CPoolIndex, ConstantPool.ConstantPoolEntry>> {
+    private val entries: LinkedHashMap<CPoolIndex, ConstantPoolEntry> = LinkedHashMap()
     private val cache: MutableMap<ConstantPoolEntry, CPoolIndex> = mutableMapOf()
+
+    var currentIndex = 0
 
     enum class Tag(val code: UByte) {
         CONSTANT_Utf8(1u),
@@ -79,11 +81,35 @@ class ConstantPool : Iterable<ConstantPool.ConstantPoolEntry> {
     }
 
     fun writeLong(value: Long): CPoolIndex {
-        return addEntry(CONSTANT_Long_info(value))
+        val entry = addEntry(CONSTANT_Long_info(value))
+
+        /*
+         * If a CONSTANT_Long_info structure is the entry at index n in the constant_pool table,
+         * then the next usable entry in the table is located at index n+2.
+         * The constant_pool index n+1 must be valid but is considered unusable.
+         *
+         * In retrospect, making 8-byte constants take two constant pool entries was a poor choice.
+         * https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-4.html#jvms-4.4.5
+         */
+        currentIndex += 1
+
+        return entry
     }
 
     fun writeDouble(value: Double): CPoolIndex {
-        return addEntry(CONSTANT_Double_info(value))
+        val addEntry = addEntry(CONSTANT_Double_info(value))
+
+        /*
+         * If a CONSTANT_Double_info structure is the entry at index n in the constant_pool table,
+         * then the next usable entry in the table is located at index n+2.
+         * The constant_pool index n+1 must be valid but is considered unusable.
+         *
+         * In retrospect, making 8-byte constants take two constant pool entries was a poor choice.
+         * https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-4.html#jvms-4.4.5
+         */
+        currentIndex += 1
+
+        return addEntry
     }
 
     fun writeDynamic(bootstrapMethodAttrIndex: UShort, nameAndTypeIdx: CPoolIndex): CPoolIndex {
@@ -125,14 +151,14 @@ class ConstantPool : Iterable<ConstantPool.ConstantPoolEntry> {
     }
 
     fun readUtf8(idx: CPoolIndex): String? {
-        val utf8Info = entries[idx.toInt() - 1]
+        val utf8Info = entries[idx]
         if (utf8Info !is CONSTANT_Utf8_info) return null
 
         return utf8Info.value
     }
 
     fun readClass(idx: CPoolIndex): String? {
-        val classInfo = entries[idx.toInt() - 1]
+        val classInfo = entries[idx]
         if (classInfo !is CONSTANT_Class_info) return null
 
         return readUtf8(classInfo.nameIndex)
@@ -140,8 +166,10 @@ class ConstantPool : Iterable<ConstantPool.ConstantPoolEntry> {
 
     private fun addEntry(entry: ConstantPoolEntry): CPoolIndex {
         return cache.computeIfAbsent(entry) { e ->
-            entries.add(e)
-            CPoolIndex(entries.size)
+            currentIndex += 1
+            val idx = CPoolIndex(currentIndex)
+            entries[idx] = entry
+            idx
         }
     }
 
@@ -303,7 +331,7 @@ class ConstantPool : Iterable<ConstantPool.ConstantPoolEntry> {
             }.toByteArray()
     }
 
-    val size get() = entries.size
+    val size get() = currentIndex
 
-    override fun iterator(): Iterator<ConstantPoolEntry> = entries.iterator()
+    override fun iterator(): MutableIterator<MutableMap.MutableEntry<CPoolIndex, ConstantPoolEntry>> = entries.entries.iterator()
 }

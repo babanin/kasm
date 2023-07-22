@@ -22,6 +22,34 @@ class ClassFieldGenerationTest {
             _field("boxedLong", java.lang.Long::class.java.descriptor(), PRIVATE + VOLATILE)
 
             _field("arrayOfInt", IntArray::class.java, PROTECTED + STATIC)
+
+            _staticField("primitiveInt", Int::class.java) {
+                _value(1000)
+            }
+
+            _staticField("primitiveBoolean", Boolean::class.java) {
+                _value(true)
+            }
+
+            _staticField("primitiveChar", Char::class.java) {
+                _value('c')
+            }
+
+            _staticField("staticFloat", Float::class.java) {
+                _value(1.0F)
+            }
+            
+            _staticField("staticLong", Long::class.java) {
+                _value(1000L)
+            }
+
+            _staticField("staticDouble", Double::class.java) {
+                _value(1000.0)
+            }
+
+            _staticField("str", String::class.java) {
+                _value("hello world")
+            }
         }
 
         // when
