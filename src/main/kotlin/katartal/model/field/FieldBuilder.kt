@@ -9,7 +9,7 @@ open class FieldBuilder(
     val name: String,
     val descriptor: String,
     val access: FieldAccess,
-    constantPool: ConstantPool
+    private val constantPool: ConstantPool
 ) {
     val nameCpIndex: CPoolIndex = constantPool.writeUtf8(name)
     val descriptorCpIndex: CPoolIndex = constantPool.writeUtf8(descriptor)
