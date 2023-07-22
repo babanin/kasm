@@ -9,7 +9,7 @@ open class FieldBuilder(
     val name: String,
     val descriptor: String,
     val access: FieldAccess,
-    private val constantPool: ConstantPool
+    constantPool: ConstantPool
 ) {
     val nameCpIndex: CPoolIndex = constantPool.writeUtf8(name)
     val descriptorCpIndex: CPoolIndex = constantPool.writeUtf8(descriptor)
@@ -34,6 +34,4 @@ open class FieldBuilder(
     override fun toString(): String {
         return "${this::class.java.simpleName}(name='$name', descriptor='$descriptor', access=$access)"
     }
-
-
 }

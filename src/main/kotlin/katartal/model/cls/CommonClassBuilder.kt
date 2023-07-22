@@ -106,6 +106,27 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
         return fieldBuilder
     }
 
+    fun _staticField(
+        name: String,
+        descriptor: Class<*>,
+        access: FieldAccess = FieldAccess.PUBLIC,
+        init: StaticFieldBuilder.() -> Unit = {}
+    ) {
+        _staticField(name, descriptor.descriptor(), access, init)
+    }
+
+    fun _staticField(
+        name: String,
+        descriptor: String,
+        access: FieldAccess = FieldAccess.PUBLIC,
+        init: StaticFieldBuilder.() -> Unit = {}
+    ): StaticFieldBuilder {
+        val fieldBuilder = StaticFieldBuilder(name, descriptor, access, constantPool)
+        fieldBuilders += fieldBuilder
+        fieldBuilder.init()
+        return fieldBuilder
+    }
+
     fun _field(
         name: String,
         descriptor: String,
