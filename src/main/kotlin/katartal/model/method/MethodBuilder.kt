@@ -27,7 +27,9 @@ class MethodBuilder(
     val nameCpIndex: CPoolIndex
     var descriptorCpIndex: CPoolIndex
 
+    private var signature : String? = null
     val attributes: MutableList<MethodAttribute> = mutableListOf()
+    
     private val labels = mutableMapOf<String, Label>()
     private val variables = mutableListOf<LocalVariable>()
 
@@ -100,6 +102,10 @@ class MethodBuilder(
         return this
     }
 
+    fun _signature(signature: String) {
+        this.signature = signature
+    }
+
     fun flush() {
         if (!(access[ABSTRACT] || access[NATIVE])) {
             val codeBuilder =
@@ -114,6 +120,11 @@ class MethodBuilder(
         
         if(throws.isNotEmpty()) {
             attributes += buildMethodExceptionsAttribute()
+        }
+
+        if(signature != null) {
+            attributes += SignatureAttribute(constantPool.writeUtf8("Signature"),
+                constantPool.writeUtf8(signature!!))
         }
     }
 

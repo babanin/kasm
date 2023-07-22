@@ -15,7 +15,10 @@ class RecordGenerationTest {
     @Test
     fun shouldGenerateRecord() {
         // given
-        val klass = _record("Point", listOf("x" to Int::class.java, "y" to Int::class.java))
+        val klass = _record("Point") {
+            _component("x", Int::class.java)
+            _component("y", Int::class.java)
+        }
 
         // when
         val clsBytes = PlainClassGenerator().toByteArray(klass)

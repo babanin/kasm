@@ -7,6 +7,7 @@ import katartal.model.JavaVersion
 import katartal.model.attribute.BootstrapMethod
 import katartal.model.attribute.BootstrapMethodAttribute
 import katartal.model.attribute.ClassAttribute
+import katartal.model.attribute.SignatureAttribute
 import katartal.model.field.FieldAccess
 import katartal.model.field.FieldBuilder
 import katartal.model.field.StaticFieldBuilder
@@ -35,6 +36,7 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
 
     val constantPool = ConstantPool()
 
+    private var signature: String? = null
     val attributes: MutableList<ClassAttribute> = mutableListOf()
 
     init {
@@ -79,8 +81,8 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
         descriptor: Class<*>,
         access: FieldAccess = FieldAccess.PUBLIC,
         init: FieldBuilder.() -> Unit = {}
-    ) {
-        _field(name, descriptor.descriptor(), access, init)
+    ): FieldBuilder {
+        return _field(name, descriptor.descriptor(), access, init)
     }
 
     fun _staticField(
@@ -133,11 +135,22 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
 
     }
 
+    fun _signature(signature: String) {
+        this.signature = signature
+    }
+
     open fun flush() {
         methodBuilders.forEach { it.flush() }
         fieldBuilders.forEach { it.flush() }
 
         attributes += buildBootstrapMethodAttribute()
+
+        if (signature != null) {
+            attributes += SignatureAttribute(
+                constantPool.writeUtf8("Signature"),
+                constantPool.writeUtf8(signature!!)
+            )
+        }
 
         println("Constant pool:")
         for ((index, entry) in constantPool) {

@@ -38,4 +38,4 @@ class RecordAttribute(attributeNameIdx: CPoolIndex, private val components: List
     }
 }
 
-data class RecordComponentInfo(val nameIdx: CPoolIndex, val descriptorIdx: CPoolIndex, val attributes: List<Attribute>)
+data class RecordComponentInfo(val nameIdx: CPoolIndex, val descriptorIdx: CPoolIndex, val attributes: List<RecordComponentAttribute>)

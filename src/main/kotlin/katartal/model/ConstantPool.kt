@@ -165,7 +165,7 @@ class ConstantPool : Iterable<MutableMap.MutableEntry<CPoolIndex, ConstantPool.C
     }
 
     private fun addEntry(entry: ConstantPoolEntry): CPoolIndex {
-        return cache.computeIfAbsent(entry) { e ->
+        return cache.computeIfAbsent(entry) { _ ->
             currentIndex += 1
             val idx = CPoolIndex(currentIndex)
             entries[idx] = entry

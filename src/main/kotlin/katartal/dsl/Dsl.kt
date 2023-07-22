@@ -37,10 +37,9 @@ fun _enum(name: String, init: EnumBuilder.() -> Unit = {}): EnumBuilder {
 
 fun _record(
     name: String,
-    parameters: List<Pair<String, Any>> = listOf(),
     init: RecordBuilder.() -> Unit = {}
 ): RecordBuilder {
-    val recordBuilder = RecordBuilder(name, parameters, PUBLIC)
+    val recordBuilder = RecordBuilder(name, PUBLIC)
     recordBuilder.init()
     recordBuilder.flush()
     return recordBuilder
