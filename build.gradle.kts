@@ -50,7 +50,7 @@ koverReport {
             onCheck = false
 
             // XML report file
-            setReportFile(layout.buildDirectory.file("report/result.xml"))
+            setReportFile(layout.buildDirectory.file("reports/kover/report.xml"))
 
             // overriding filters only for the XML report 
             filters {
@@ -86,7 +86,7 @@ koverReport {
             onCheck = false
 
             // directory for HTML report
-            setReportDir(layout.buildDirectory.dir("report/html-result"))
+            setReportDir(layout.buildDirectory.dir("reports/kover/html-result"))
 
             // overriding filters only for the HTML report
             filters {
