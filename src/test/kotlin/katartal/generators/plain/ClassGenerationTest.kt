@@ -8,12 +8,18 @@ import katartal.model.method.MethodAccess.Companion.STATIC
 import katartal.model.method.StackFrameBuilder.IntegerVar
 import katartal.model.method.StackFrameBuilder.ObjectVar
 import katartal.model.method.plugins.branching._if
+import katartal.model.method.plugins.branching._tryCatch
+import katartal.model.method.plugins.branching.handledBy
 import katartal.model.method.plugins.lvt.releaseVariable
 import katartal.model.method.plugins.lvt.variable
 import katartal.util.ByteArrayClassLoader
+import katartal.util.descriptor
+import katartal.util.path
+import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
 import util.Assertions.assertThat
 import java.io.*
+import java.lang.ArithmeticException
 
 class ClassGenerationTest {
     @Test
@@ -435,6 +441,87 @@ class ClassGenerationTest {
     }
 
 
+    /**
+     *   public int divide(Integer a, Integer b) {
+     *       try {
+     *           return a / b;
+     *       } catch (ArithmeticException e) {
+     *           return 0;
+     *       } catch (NullPointerException e) {
+     *           return 1;
+     *       }
+     *   }
+     */
+    @Test
+    fun shouldHandleDivisionExceptions() {
+        // given
+        val klass = _class("Test") {
+            _method("divide", listOf("a" to Integer::class.java, "b" to Integer::class.java), PUBLIC + STATIC) {
+                _code(maxLocals = 0, maxStack = 2) {
+                    // Locals:
+                    //   0: num (parameter)
+
+                    _tryCatch(
+                        listOf(
+                            java.lang.ArithmeticException::class.java.descriptorString() handledBy "aeLabel",
+                            java.lang.NullPointerException::class.java.descriptorString() handledBy "npeLabel"
+                        )
+                    ) {
+                        _instruction(ALOAD_0)
+                        _instruction(INVOKEVIRTUAL) {
+                            _indexU2(constantPool.writeMethodRef(Integer::class.java.path(), "intValue", "()I"))
+
+                        }
+
+                        _instruction(ALOAD_1)
+                        _instruction(INVOKEVIRTUAL) {
+                            _indexU2(constantPool.writeMethodRef(Integer::class.java.path(), "intValue", "()I"))
+                        }
+
+                        _instruction(IDIV)
+                        _return(Int::class.java)
+                    }
+
+                    label("aeLabel")
+                    _stackFrame {
+                        _same_locals_1_stack_item(ObjectVar(ArithmeticException::class.java))
+                    }
+                    _instruction(ASTORE_2)
+                    _loadIntOnStack(0)
+                    _return(Int::class.java)
+
+                    label("npeLabel")
+                    _stackFrame {
+                        _same_locals_1_stack_item(ObjectVar(ArithmeticException::class.java))
+                    }
+                    _instruction(ASTORE_2)
+                    _loadIntOnStack(1)
+                    _return(Int::class.java)
+                }
+            } returns Int::class.java
+        }
+
+        // when
+        val clsBytes = PlainClassGenerator().toByteArray(klass)
+
+        print(clsBytes)
+
+        // then
+        val classLoader = ByteArrayClassLoader(this.javaClass.classLoader)
+        val toClass = classLoader.loadClass(klass.className, clsBytes)
+
+        assertThat(toClass)
+            .isNotNull
+            .hasMethods("divide")
+
+        val divideMethod = toClass.getDeclaredMethod("divide", Integer::class.java, Integer::class.java)
+
+        Assertions.assertThat(divideMethod.invoke(null, 2, 1) as Int).isEqualTo(2)
+        Assertions.assertThat(divideMethod.invoke(null, 2, null) as Int).isEqualTo(1)
+        Assertions.assertThat(divideMethod.invoke(null, 2, 0) as Int).isEqualTo(0)
+    }
+
+
     @Target(AnnotationTarget.CLASS)
     @Retention(AnnotationRetention.RUNTIME)
     @MustBeDocumented
@@ -460,7 +547,7 @@ class ClassGenerationTest {
 
             _method("isOdd") {
                 _annotate(MethodLevelAnnotation::class.java)
-            } 
+            }
 
             _annotate(ClassLevelAnnotation::class.java)
         }

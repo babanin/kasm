@@ -19,6 +19,7 @@ class CodeBuilder(
 ) {
     val instructions = mutableListOf<InstructionBuilder>()
     val frames = mutableListOf<StackFrameBuilder.StackFrame>()
+    val exceptionHandlers = mutableListOf<ExceptionHandler>()
 
     private fun ensureStackCapacity(minStackSize: Int) {
         maxStack = max(maxStack, minStackSize)
@@ -156,10 +157,14 @@ class CodeBuilder(
         _instruction(operation)
     }
 
-    fun _goto(label: Label): InstructionBuilder {
+    fun _goto(absolute: Short): InstructionBuilder {
         return _instruction(ByteCode.GOTO) {
-            _position((label.position.toInt() - currentPos.toInt()).toShort())
+            _position(absolute)
         }
+    }
+
+    fun _goto(label: Label): InstructionBuilder {
+        return _goto((label.position.toInt() - currentPos.toInt()).toShort())
     }
 
     fun _goto(label: String): LazyInstructionBuilder {
@@ -179,12 +184,6 @@ class CodeBuilder(
 
     fun label(): Label {
         return label("Position: $currentPos")
-    }
-
-    fun _goto(absolute: Short): InstructionBuilder {
-        return _instruction(ByteCode.GOTO) {
-            _position(absolute)
-        }
     }
 
     fun _loadIntOnStack(num: Int): InstructionBuilder {
@@ -210,6 +209,17 @@ class CodeBuilder(
             "D" -> _instruction(ByteCode.DRETURN)
             else -> _instruction(ByteCode.ARETURN)
         }
+    }
+
+    data class ExceptionHandler(
+        val startPc: UShort,
+        val endPc: UShort,
+        val handlerPc: UShort,
+        val catchType: CPoolIndex
+    )
+
+    fun _exceptionHandler(startPc: UShort, endPc: UShort, handlerPc: UShort, catchType: CPoolIndex) {
+        exceptionHandlers += ExceptionHandler(startPc, endPc, handlerPc, catchType)
     }
 
     fun _return(type: Class<*>): InstructionBuilder {

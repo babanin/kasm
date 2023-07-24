@@ -13,6 +13,10 @@ fun <T> Class<T>.descriptor(): String {
     return descriptorString()
 }
 
-fun methodDescriptor(returnType: Class<*>, vararg parameters: Class<*>): String {
-    return parameters.joinToString(separator = "", prefix = "(", postfix = ")") { it.descriptor() } + returnType.descriptor()
+fun methodDescriptor(parameters: List<Class<*>>, returnType: Class<*>): String {
+    return parameters.joinToString(
+        separator = "",
+        prefix = "(",
+        postfix = ")"
+    ) { it.descriptor() } + returnType.descriptor()
 }

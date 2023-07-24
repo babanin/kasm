@@ -53,6 +53,11 @@ sealed class StackMapFrameAttribute(val frameType: UByte) {
     override fun toString(): String = "${this.javaClass.simpleName} frameType=${frameType}"
 }
 
+/**
+ * The frame type same_frame is represented by tags in the range [0-63].
+ * This frame type indicates that the frame has exactly the same local variables as the previous frame and that
+ * the operand stack is empty. The offset_delta value for the frame is the value of the tag item, frame_type.
+ */
 class same_frame(frameType: UByte) : StackMapFrameAttribute(frameType) {
     init {
         if (frameType > 63u) {
@@ -64,8 +69,16 @@ class same_frame(frameType: UByte) : StackMapFrameAttribute(frameType) {
     }
 }
 
-class same_locals_1_stack_item_frame(frameType: UByte, private val verificationTypeInfo: VerificationTypeInfo) :
-    StackMapFrameAttribute(frameType) {
+/**
+ * The frame type same_locals_1_stack_item_frame is represented by tags in the range [64, 127].
+ * If the frame_type is same_locals_1_stack_item_frame, it means the frame has exactly the same locals as the
+ * previous stack map frame and that the number of stack items is 1.
+ * The offset_delta value for the frame is the value (frame_type - 64).
+ * There is a verification_type_info following the frame_type for the one stack item.
+ */
+class same_locals_1_stack_item_frame(offset: UShort, private val verificationTypeInfo: VerificationTypeInfo) :
+    StackMapFrameAttribute((offset + 64u).toUByte()) {
+
     init {
         if (frameType < 64u || frameType > 127u) {
             throw IllegalStateException(
@@ -77,6 +90,7 @@ class same_locals_1_stack_item_frame(frameType: UByte, private val verificationT
 
     override fun writeCustomData(dynamicByteArray: DynamicByteArray) {
         dynamicByteArray.putU1(verificationTypeInfo.tag.code)
+        dynamicByteArray.putByteArray(verificationTypeInfo.toByteArray())
     }
 }
 
@@ -86,11 +100,18 @@ class same_locals_1_stack_item_frame_extended(
 ) :
     StackMapFrameAttribute(247u) {
     override fun writeCustomData(dynamicByteArray: DynamicByteArray) {
-        dynamicByteArray.putU2(offsetDelta)
         dynamicByteArray.putU1(verificationTypeInfo.tag.code)
+        dynamicByteArray.putU2(offsetDelta)
+        dynamicByteArray.putByteArray(verificationTypeInfo.toByteArray())
     }
 }
 
+/**
+ * The frame type chop_frame is represented by tags in the range [248-250].
+ * If the frame_type is chop_frame, it means that the operand stack is empty and the current locals are the
+ * same as the locals in the previous frame, except that the k last locals are absent.
+ * The value of k is given by the formula 251 - frame_type.
+ */
 class chop_frame(private val offsetDelta: UShort, k: UByte) : StackMapFrameAttribute((251u - k).toUByte()) {
     init {
         if (frameType < 248u || frameType > 250u) {
@@ -114,6 +135,12 @@ class same_frame_extended(private val offsetDelta: UShort) : StackMapFrameAttrib
     }
 }
 
+/**
+ * The frame type append_frame is represented by tags in the range [252-254].
+ * If the frame_type is append_frame, it means that the operand stack is empty and the current locals are the
+ * same as the locals in the previous frame, except that k additional locals are defined.
+ * The value of k is given by the formula frame_type - 251.
+ */
 class append_frame(
     private val offsetDelta: UShort,
     private val locals: List<VerificationTypeInfo>
@@ -140,6 +167,45 @@ class append_frame(
     override fun toString(): String = "append_frame offset=${offsetDelta} locals=${locals}"
 }
 
+/**
+ * The 0th entry in locals represents the verification type of local variable 0. If locals[M] represents local variable N, then:
+ *  locals[M+1] represents local variable N+1 if locals[M] is one of
+ *      Top_variable_info,
+ *      Integer_variable_info,
+ *      Float_variable_info,
+ *      Null_variable_info,
+ *      UninitializedThis_variable_info,
+ *      Object_variable_info, or
+ *      Uninitialized_variable_info; and
+ *
+ *  locals[M+1] represents local variable N+2 if locals[M] is either
+ *      Long_variable_info,
+ *      Double_variable_info.
+ *
+ * It is an error if, for any index i, locals[i] represents a local variable whose index is greater than the
+ * maximum number of local variables for the method.
+ *
+ * The 0th entry in stack represents the verification type of the bottom of the operand stack, and
+ * subsequent entries in stack represent the verification types of stack entries closer to the top of the operand
+ * stack. We refer to the bottom of the operand stack as stack entry 0, and to subsequent entries of the operand
+ * stack as stack entry 1, 2, etc. If stack[M] represents stack entry N, then:
+ *
+ *  stack[M+1] represents stack entry N+1 if stack[M] is one of
+ *      Top_variable_info,
+ *      Integer_variable_info,
+ *      Float_variable_info,
+ *      Null_variable_info,
+ *      UninitializedThis_variable_info,
+ *      Object_variable_info, or
+ *      Uninitialized_variable_info; and
+ *
+ *  stack[M+1] represents stack entry N+2 if stack[M] is either
+ *      Long_variable_info or
+ *      Double_variable_info.
+ *
+ * It is an error if, for any index i, stack[i] represents a stack entry whose index is greater than the maximum
+ * operand stack size for the method.
+ */
 class full_frame(
     private val offsetDelta: UShort,
     private val locals: List<VerificationTypeInfo>,

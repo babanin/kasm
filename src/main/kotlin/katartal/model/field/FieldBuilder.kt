@@ -14,7 +14,7 @@ open class FieldBuilder(
     val nameCpIndex: CPoolIndex = constantPool.writeUtf8(name)
     val descriptorCpIndex: CPoolIndex = constantPool.writeUtf8(descriptor)
 
-    private var signature : String? = null
+    private var signature: String? = null
     val attributes: MutableList<FieldAttribute> = mutableListOf()
 
     fun _annotate(annotation: Class<*>) {
@@ -25,9 +25,11 @@ open class FieldBuilder(
     }
 
     open fun flush() {
-        if(signature != null) {
-            attributes += SignatureAttribute(constantPool.writeUtf8("Signature"),
-                constantPool.writeUtf8(signature!!))
+        if (signature != null) {
+            attributes += SignatureAttribute(
+                constantPool.writeUtf8("Signature"),
+                constantPool.writeUtf8(signature!!)
+            )
         }
     }
 

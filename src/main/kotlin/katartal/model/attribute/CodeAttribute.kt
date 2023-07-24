@@ -43,7 +43,7 @@ class CodeAttribute(
             codeAttributeArray.putU2(exception.startPc)
             codeAttributeArray.putU2(exception.endPc)
             codeAttributeArray.putU2(exception.handlerPc)
-            codeAttributeArray.putU2(exception.catchType)
+            codeAttributeArray.putU2(exception.catchType.toUInt())
         }
 
         codeAttributeArray.putU2(attributes.size)
@@ -55,4 +55,4 @@ class CodeAttribute(
     }
 }
 
-data class ExceptionEntry(val startPc: Int, val endPc: Int, val handlerPc: Int, val catchType: Int)
+data class ExceptionEntry(val startPc: UShort, val endPc: UShort, val handlerPc: UShort, val catchType: CPoolIndex)

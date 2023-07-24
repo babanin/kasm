@@ -11,10 +11,10 @@ package katartal.model
  */
 enum class ByteCode(
     val opcode: UByte,
-    
+
     val stackChange: Int = 0,
     val resetStack: Int? = null,
-    
+
     val expectedParameters: Int = 0
 ) {
     /**
@@ -135,7 +135,7 @@ enum class ByteCode(
      * @param index
      */
     LDC(0x12u, stackChange = 1, expectedParameters = 1), // 18
-    
+
     /**
      * Push a constant #index from a constant pool (
      * String, int, float, Class, java.lang.invoke.MethodType,
@@ -212,7 +212,7 @@ enum class ByteCode(
      * → value
      */
     ILOAD_3(0x1Du, stackChange = 1), // 29
-    
+
     /**
      * Load a long value from local variable 0
      * → value
@@ -267,21 +267,21 @@ enum class ByteCode(
      */
     DLOAD_0(0x26u, stackChange = 1), // 38
 
-    
+
     /**
      * Load a double value from local variable 0
      * → value
      */
     DLOAD_1(0x27u, stackChange = 1), // 39
 
-    
+
     /**
      * Load a double value from local variable 0
      * → value
      */
     DLOAD_2(0x28u, stackChange = 1), // 40
 
-    
+
     /**
      * Load a double value from local variable 0
      * → value
@@ -600,7 +600,7 @@ enum class ByteCode(
      * @param branchbyte2
      */
     IFNE(0x9Au, stackChange = -1, expectedParameters = 2), // 154
-    
+
     IFLT(155u), // 155
     IFGE(156u), // 156
     IFGT(157u), // 157
@@ -628,7 +628,7 @@ enum class ByteCode(
      * @param branchbyte2
      */
     GOTO(0xA7u, stackChange = 0, expectedParameters = 2),
-    
+
     JSR(168u),
     RET(169u),
     TABLESWITCH(170u),
@@ -709,10 +709,10 @@ enum class ByteCode(
      * @param indexbyte1
      * @param indexbyte2
      */
-    INVOKESPECIAL(0xB7u, resetStack = 1,  expectedParameters = 2), // 183
+    INVOKESPECIAL(0xB7u, resetStack = 1, expectedParameters = 2), // 183
 
     /**
-     * Invoke a static method and puts the result on the stack (might be void); 
+     * Invoke a static method and puts the result on the stack (might be void);
      * the method is identified by method reference index in constant pool
      * @param indexbyte1
      * @param indexbyte2
@@ -721,7 +721,7 @@ enum class ByteCode(
     INVOKEINTERFACE(0xB9u), // 185
 
     /**
-     * Invokes a dynamic method and puts the result on the stack (might be void); 
+     * Invokes a dynamic method and puts the result on the stack (might be void);
      * the method is identified by method reference index in constant pool
      * @param indexbyte1
      * @param indexbyte2

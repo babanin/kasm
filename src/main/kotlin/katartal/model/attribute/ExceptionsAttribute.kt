@@ -8,7 +8,10 @@ import katartal.util.DynamicByteArray
  * The Exceptions attribute indicates which checked exceptions a method may throw.
  * There may be at most one Exceptions attribute in each method_info structure.
  */
-class MethodExceptionsAttribute(attributeNameIndex: CPoolIndex, private val exceptionClassIdx: List<CPoolIndex>) :
+class MethodExceptionsAttribute(
+    attributeNameIndex: CPoolIndex,
+    private val exceptionClassIdx: List<CPoolIndex>
+) :
     Attribute(attributeNameIndex), MethodAttribute {
     override fun generateAttributeData(): ByteArray {
         return DynamicByteArray(2 + exceptionClassIdx.size * 2).apply {

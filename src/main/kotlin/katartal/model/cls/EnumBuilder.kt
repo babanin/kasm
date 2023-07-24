@@ -28,17 +28,17 @@ class EnumBuilder(enumName: String, access: ClassAccess) :
 
     private val enumValues = mutableListOf<FieldBuilder>()
     private val initCodeByValue = mutableMapOf<String, CodeBuilder.() -> Unit>()
-    
+
     fun _value(name: String, ctrCode: CodeBuilder.() -> Unit = {}) {
         enumValues += _field(name, "L${className};", PUBLIC + STATIC + FINAL + ENUM)
         initCodeByValue[name] = ctrCode
-    }    
+    }
 
     override fun flush() {
         _field("\$VALUES", "[L$className;", PRIVATE + STATIC + FINAL + SYNTHETIC)
 
-        var ctor = methodBuilders.find { it.ctr }           
-        if(ctor == null) {
+        var ctor = methodBuilders.find { it.ctr }
+        if (ctor == null) {
             ctor =
                 _constructor(listOf("name" to String::class.java, "ordinal" to Int::class.java), MethodAccess.PRIVATE) {
                     _code {
@@ -101,9 +101,9 @@ class EnumBuilder(enumName: String, access: ClassAccess) :
                         _instruction(ByteCode.DUP)
                         _ldc(field.value.name)
                         _loadIntOnStack(field.index)
-                        
+
                         val code = initCodeByValue[field.value.name]
-                        if(code != null) {
+                        if (code != null) {
                             this.run(code)
                         }
 

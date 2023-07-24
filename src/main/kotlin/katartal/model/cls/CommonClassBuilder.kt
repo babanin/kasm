@@ -14,7 +14,9 @@ import katartal.model.field.StaticFieldBuilder
 import katartal.model.method.MethodAccess
 import katartal.model.method.MethodBuilder
 import katartal.util.descriptor
+import katartal.util.methodDescriptor
 import katartal.util.path
+
 
 abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
     val className: String,
@@ -122,10 +124,14 @@ abstract class CommonClassBuilder<SELF : CommonClassBuilder<SELF>>(
         kind: ConstantPool.RefKind,
         cls: String,
         name: String,
-        type: String,
+        parameters: List<Class<*>>,
+        returnType: Class<*>,
         init: BoostrapMethodBuilder.() -> Unit
     ): BoostrapMethodBuilder {
-        val boostrapMethodBuilder = BoostrapMethodBuilder(kind, cls, name, type, boostrapMethodBuilders.size.toUShort())
+        val boostrapMethodBuilder = BoostrapMethodBuilder(
+            kind, cls, name, methodDescriptor(parameters, returnType),
+            boostrapMethodBuilders.size.toUShort()
+        )
         boostrapMethodBuilders += boostrapMethodBuilder
         boostrapMethodBuilder.init()
         return boostrapMethodBuilder

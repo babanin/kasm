@@ -333,5 +333,6 @@ class ConstantPool : Iterable<MutableMap.MutableEntry<CPoolIndex, ConstantPool.C
 
     val size get() = currentIndex
 
-    override fun iterator(): MutableIterator<MutableMap.MutableEntry<CPoolIndex, ConstantPoolEntry>> = entries.entries.iterator()
+    override fun iterator(): MutableIterator<MutableMap.MutableEntry<CPoolIndex, ConstantPoolEntry>> =
+        entries.entries.iterator()
 }

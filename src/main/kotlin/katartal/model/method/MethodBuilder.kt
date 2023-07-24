@@ -27,9 +27,9 @@ class MethodBuilder(
     val nameCpIndex: CPoolIndex
     var descriptorCpIndex: CPoolIndex
 
-    private var signature : String? = null
+    private var signature: String? = null
     val attributes: MutableList<MethodAttribute> = mutableListOf()
-    
+
     private val labels = mutableMapOf<String, Label>()
     private val variables = mutableListOf<LocalVariable>()
 
@@ -117,33 +117,39 @@ class MethodBuilder(
             attributes += buildCodeAttribute(codeBuilder)
             attributes += buildLocalVariableTable(codeBuilder)
         }
-        
-        if(throws.isNotEmpty()) {
+
+        if (throws.isNotEmpty()) {
             attributes += buildMethodExceptionsAttribute()
         }
 
-        if(signature != null) {
-            attributes += SignatureAttribute(constantPool.writeUtf8("Signature"),
-                constantPool.writeUtf8(signature!!))
+        if (signature != null) {
+            attributes += SignatureAttribute(
+                constantPool.writeUtf8("Signature"),
+                constantPool.writeUtf8(signature!!)
+            )
         }
     }
 
     private fun buildMethodExceptionsAttribute(): MethodExceptionsAttribute {
-        return MethodExceptionsAttribute(constantPool.writeUtf8("Exceptions"), 
-            throws.map(constantPool::writeClass))
+        return MethodExceptionsAttribute(
+            constantPool.writeUtf8("Exceptions"),
+            throws.map(constantPool::writeClass)
+        )
     }
 
     private fun buildStackMapFrameTable(codeBuilder: CodeBuilder): MethodCodeAttribute {
         val entries = mutableListOf<StackMapFrameAttribute>()
 
-        fun mapTypes(list: List<StackFrameBuilder.Type>): List<VerificationTypeInfo> {
-            return list.map {
-                when (it) {
-                    is StackFrameBuilder.ObjectVar -> Object_variable_info(constantPool.writeClass(it.cls))
-                    is StackFrameBuilder.IntegerVar -> Integer_variable_info()
-                    is StackFrameBuilder.TopVar -> Top_variable_info()
-                }
-            }
+        fun mapType(it: StackFrameBuilder.Type) = when (it) {
+            is StackFrameBuilder.ObjectVar -> Object_variable_info(constantPool.writeClass(it.cls))
+            is StackFrameBuilder.IntegerVar -> Integer_variable_info()
+            is StackFrameBuilder.TopVar -> Top_variable_info()
+            is StackFrameBuilder.DoubleVar -> Double_variable_info()
+            is StackFrameBuilder.FloatVar -> Float_variable_info()
+            is StackFrameBuilder.LongVar -> Long_variable_info()
+            is StackFrameBuilder.NullVar -> Null_variable_info()
+            is StackFrameBuilder.UninitializedThisVar -> UninitializedThis_variable_info()
+            is StackFrameBuilder.UninitializedVar -> Uninitialized_variable_info(it.offset)
         }
 
         var lastPosition: UShort = 0u
@@ -151,15 +157,16 @@ class MethodBuilder(
             val offsetDelta = (frame.absoluteOffset - lastPosition).toUShort()
 
             entries += when (frame) {
-                is StackFrameBuilder.AppendFrame -> append_frame(offsetDelta, mapTypes(frame.locals))
+                is StackFrameBuilder.AppendFrame -> append_frame(offsetDelta, frame.locals.map(::mapType))
                 is StackFrameBuilder.FullFrame -> full_frame(
                     offsetDelta,
-                    mapTypes(frame.locals),
-                    mapTypes(frame.stacks)
+                    frame.locals.map(::mapType),
+                    frame.stacks.map(::mapType)
                 )
 
                 is StackFrameBuilder.ChopFrame -> chop_frame(offsetDelta, frame.k)
                 is StackFrameBuilder.SameFrame -> same_frame(offsetDelta.toUByte())
+                is StackFrameBuilder.SameLocals1StackItem -> same_locals_1_stack_item_frame(offsetDelta, mapType(frame.local))
             }
 
             /*

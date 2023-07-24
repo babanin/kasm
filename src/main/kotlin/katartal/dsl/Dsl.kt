@@ -1,11 +1,7 @@
 package katartal.dsl
 
 import katartal.model.cls.*
-import katartal.model.cls.ClassAccess.Companion.ABSTRACT
-import katartal.model.cls.ClassAccess.Companion.FINAL
-import katartal.model.cls.ClassAccess.Companion.INTERFACE
 import katartal.model.cls.ClassAccess.Companion.PUBLIC
-import katartal.model.cls.ClassAccess.Companion.SUPER
 
 fun _class(name: String, init: ClassBuilder.() -> Unit = {}): ClassBuilder {
     val classBuilder = ClassBuilder(name, PUBLIC)
@@ -36,8 +32,7 @@ fun _enum(name: String, init: EnumBuilder.() -> Unit = {}): EnumBuilder {
 }
 
 fun _record(
-    name: String,
-    init: RecordBuilder.() -> Unit = {}
+    name: String, init: RecordBuilder.() -> Unit = {}
 ): RecordBuilder {
     val recordBuilder = RecordBuilder(name, PUBLIC)
     recordBuilder.init()

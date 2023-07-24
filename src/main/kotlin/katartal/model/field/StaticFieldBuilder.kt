@@ -21,7 +21,7 @@ class StaticFieldBuilder(
         if (descriptor != "I") {
             throw IllegalStateException(typeMismatchMessage("Int", "I", num))
         }
-        
+
         constantIdx = constantPool.writeInteger(num)
     }
 
@@ -29,7 +29,7 @@ class StaticFieldBuilder(
         if (descriptor != "Z") {
             throw IllegalStateException(typeMismatchMessage("Boolean", "Z", value))
         }
-        
+
         constantIdx = constantPool.writeInteger(if (value) 1 else 0)
     }
 
@@ -37,7 +37,7 @@ class StaticFieldBuilder(
         if (descriptor != "C") {
             throw IllegalStateException(typeMismatchMessage("Char", "C", value))
         }
-        
+
         constantIdx = constantPool.writeInteger(value.code)
     }
 
