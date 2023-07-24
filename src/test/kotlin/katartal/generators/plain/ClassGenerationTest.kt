@@ -19,7 +19,6 @@ import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
 import util.Assertions.assertThat
 import java.io.*
-import java.lang.ArithmeticException
 
 class ClassGenerationTest {
     @Test
@@ -458,45 +457,43 @@ class ClassGenerationTest {
         val klass = _class("Test") {
             _method("divide", listOf("a" to Integer::class.java, "b" to Integer::class.java), PUBLIC + STATIC) {
                 _code(maxLocals = 0, maxStack = 2) {
-                    // Locals:
-                    //   0: num (parameter)
+                    
+                    _exception {
+                        _try {
+                            _instruction(ALOAD_0)
+                            _instruction(INVOKEVIRTUAL) {
+                                _indexU2(constantPool.writeMethodRef(Integer::class.java.path(), "intValue", "()I"))
 
-                    _tryCatch(
-                        listOf(
-                            java.lang.ArithmeticException::class.java.descriptorString() handledBy "aeLabel",
-                            java.lang.NullPointerException::class.java.descriptorString() handledBy "npeLabel"
-                        )
-                    ) {
-                        _instruction(ALOAD_0)
-                        _instruction(INVOKEVIRTUAL) {
-                            _indexU2(constantPool.writeMethodRef(Integer::class.java.path(), "intValue", "()I"))
+                            }
 
+                            _instruction(ALOAD_1)
+                            _instruction(INVOKEVIRTUAL) {
+                                _indexU2(constantPool.writeMethodRef(Integer::class.java.path(), "intValue", "()I"))
+                            }
+
+                            _instruction(IDIV)
+                            _return(Int::class.java)
                         }
-
-                        _instruction(ALOAD_1)
-                        _instruction(INVOKEVIRTUAL) {
-                            _indexU2(constantPool.writeMethodRef(Integer::class.java.path(), "intValue", "()I"))
+                        
+                        _catch(ArithmeticException::class.java) {
+                            _stackFrame {
+                                _same_locals_1_stack_item(ObjectVar(ArithmeticException::class.java))
+                            }
+                            _instruction(ASTORE_2)
+                            _loadIntOnStack(0)
+                            _return(Int::class.java)
                         }
-
-                        _instruction(IDIV)
-                        _return(Int::class.java)
+                        
+                        _catch(NullPointerException::class.java) {
+                            _stackFrame {
+                                _same_locals_1_stack_item(ObjectVar(ArithmeticException::class.java))
+                            }
+                            _instruction(ASTORE_2)
+                            _loadIntOnStack(1)
+                            _return(Int::class.java)
+                        }
                     }
-
-                    label("aeLabel")
-                    _stackFrame {
-                        _same_locals_1_stack_item(ObjectVar(ArithmeticException::class.java))
-                    }
-                    _instruction(ASTORE_2)
-                    _loadIntOnStack(0)
-                    _return(Int::class.java)
-
-                    label("npeLabel")
-                    _stackFrame {
-                        _same_locals_1_stack_item(ObjectVar(ArithmeticException::class.java))
-                    }
-                    _instruction(ASTORE_2)
-                    _loadIntOnStack(1)
-                    _return(Int::class.java)
+                    
                 }
             } returns Int::class.java
         }

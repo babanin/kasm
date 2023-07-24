@@ -249,4 +249,10 @@ class CodeBuilder(
             this.maxStack = max(maxStack, stackSize)
         }
     }
+
+    fun _exception(function: ExceptionBuilder.() -> Unit) : ExceptionBuilder {
+        val exceptionBuilder = ExceptionBuilder(currentPos)
+        exceptionBuilder.function()
+        return exceptionBuilder
+    }
 }

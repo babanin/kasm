@@ -2,8 +2,8 @@ package katartal.model.method.plugins.branching
 
 import katartal.model.ByteCode
 import katartal.model.method.CodeBuilder
-import katartal.model.method.CodeBuilder.ExceptionHandler
 import katartal.model.method.instruction.InstructionBuilder
+import katartal.util.descriptor
 
 
 fun CodeBuilder._if(code: ByteCode, subRoutine: CodeBuilder.() -> Unit): List<InstructionBuilder> {
@@ -31,13 +31,19 @@ fun CodeBuilder._if(code: ByteCode, subRoutine: CodeBuilder.() -> Unit): List<In
     return inst
 }
 
-data class ExceptionLabel(val exception: String, val handlerLabel: String)
+data class ExceptionLabel(val exception: String, val handlerLabel: String) {
+    constructor(exception: Class<*>, handlerLabel: String) : this(exception.descriptor(), handlerLabel)
+}
 
 infix fun String.handledBy(label: String): ExceptionLabel {
     return ExceptionLabel(this, label)
 }
 
-fun CodeBuilder._tryCatch(handlers: List<ExceptionLabel>, block: CodeBuilder.() -> Unit): List<InstructionBuilder> {
+infix fun <T> Class<T>.handledBy(label: String): ExceptionLabel {
+    return ExceptionLabel(this, label)
+}
+
+fun CodeBuilder._tryCatch(vararg handlers: ExceptionLabel, block: CodeBuilder.() -> Unit): List<InstructionBuilder> {
     val codeBuilder = CodeBuilder(
         initialOffset = currentPos,
         constantPool = constantPool,
@@ -46,9 +52,17 @@ fun CodeBuilder._tryCatch(handlers: List<ExceptionLabel>, block: CodeBuilder.() 
     )
 
     codeBuilder.block()
+
     this.plus(codeBuilder)
-    
-//    exceptionHandlers += ExceptionHandler(currentPos, currentPos + )
+
+    for (handler in handlers) {
+        exceptionHandlers += CodeBuilder.ExceptionHandler(
+            currentPos,
+            currentPos +,
+            0u,
+            constantPool.writeClass(handler.exception)
+        )
+    }
 
     val inst = mutableListOf<InstructionBuilder>()
     inst += codeBuilder.instructions
