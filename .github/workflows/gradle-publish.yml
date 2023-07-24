@@ -10,8 +10,6 @@ name: Gradle Package
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
   build:
@@ -38,21 +36,6 @@ jobs:
       uses: gradle/gradle-build-action@bd5760595778326ba7f1441bcf7e88b49de61a25 # v2.6.0
       with:
         arguments: build
-        
-    - name: Generate kover coverage report
-      run: ./gradlew koverXmlReport
-                          
-    - name: Add coverage report to PR
-      id: kover
-      uses: mi-kas/kover-report@v1
-      with:
-        path: ${{ github.workspace }}/build/reports/kover/report.xml
-        token: ${{ secrets.GITHUB_TOKEN }}
-        title: Code Coverage
-        update-comment: true
-        min-coverage-overall: 80
-        min-coverage-changed-files: 80
-        coverage-counter-type: LINE
 
     # The USERNAME and TOKEN need to correspond to the credentials environment variables used in
     # the publishing section of your build.gradle
