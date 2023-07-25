@@ -8,12 +8,9 @@ import katartal.model.method.MethodAccess.Companion.STATIC
 import katartal.model.method.StackFrameBuilder.IntegerVar
 import katartal.model.method.StackFrameBuilder.ObjectVar
 import katartal.model.method.plugins.branching._if
-import katartal.model.method.plugins.branching._tryCatch
-import katartal.model.method.plugins.branching.handledBy
 import katartal.model.method.plugins.lvt.releaseVariable
 import katartal.model.method.plugins.lvt.variable
 import katartal.util.ByteArrayClassLoader
-import katartal.util.descriptor
 import katartal.util.path
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
@@ -457,7 +454,7 @@ class ClassGenerationTest {
         val klass = _class("Test") {
             _method("divide", listOf("a" to Integer::class.java, "b" to Integer::class.java), PUBLIC + STATIC) {
                 _code(maxLocals = 0, maxStack = 2) {
-                    
+
                     _exception {
                         _try {
                             _instruction(ALOAD_0)
@@ -474,7 +471,7 @@ class ClassGenerationTest {
                             _instruction(IDIV)
                             _return(Int::class.java)
                         }
-                        
+
                         _catch(ArithmeticException::class.java) {
                             _stackFrame {
                                 _same_locals_1_stack_item(ObjectVar(ArithmeticException::class.java))
@@ -483,17 +480,17 @@ class ClassGenerationTest {
                             _loadIntOnStack(0)
                             _return(Int::class.java)
                         }
-                        
-                        _catch(NullPointerException::class.java) {
+
+                        _catch("java/lang/NullPointerException") {
                             _stackFrame {
-                                _same_locals_1_stack_item(ObjectVar(ArithmeticException::class.java))
+                                _same_locals_1_stack_item(ObjectVar(NullPointerException::class.java))
                             }
                             _instruction(ASTORE_2)
                             _loadIntOnStack(1)
                             _return(Int::class.java)
                         }
                     }
-                    
+
                 }
             } returns Int::class.java
         }

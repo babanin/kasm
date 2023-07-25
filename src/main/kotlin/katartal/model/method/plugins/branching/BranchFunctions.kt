@@ -58,7 +58,7 @@ fun CodeBuilder._tryCatch(vararg handlers: ExceptionLabel, block: CodeBuilder.()
     for (handler in handlers) {
         exceptionHandlers += CodeBuilder.ExceptionHandler(
             currentPos,
-            currentPos +,
+            currentPos,
             0u,
             constantPool.writeClass(handler.exception)
         )

@@ -9,12 +9,12 @@ import katartal.util.descriptor
 import katartal.util.path
 import kotlin.math.max
 
-class CodeBuilder(
+open class CodeBuilder(
     var maxLocals: Int = -1,
     var maxStack: Int = -1,
     private val initialOffset: UShort = 0u,
     internal val labels: MutableMap<String, Label>,
-    internal val variables: MutableList<LocalVariable>,
+    internal val variables: MutableList<LocalVariable> = mutableListOf(),
     internal val constantPool: ConstantPool
 ) {
     val instructions = mutableListOf<InstructionBuilder>()
@@ -234,7 +234,7 @@ class CodeBuilder(
         return this
     }
 
-    fun flush() {
+    open fun flush() {
         var stackSize = 0
         for (instruction in instructions) {
             instruction.flush()
@@ -251,7 +251,7 @@ class CodeBuilder(
     }
 
     fun _exception(function: ExceptionBuilder.() -> Unit) : ExceptionBuilder {
-        val exceptionBuilder = ExceptionBuilder(currentPos)
+        val exceptionBuilder = ExceptionBuilder(currentPos, constantPool, labels)
         exceptionBuilder.function()
         return exceptionBuilder
     }
