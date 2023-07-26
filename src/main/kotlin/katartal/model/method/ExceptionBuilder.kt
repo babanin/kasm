@@ -1,6 +1,7 @@
 package katartal.model.method
 
 import katartal.model.ConstantPool
+import java.lang.IllegalStateException
 
 class ExceptionBuilder(currentPos: UShort, constantPool: ConstantPool, labels: MutableMap<String, Label>) :
     CodeBuilder(initialOffset = currentPos, constantPool = constantPool, labels = labels) {
@@ -8,6 +9,8 @@ class ExceptionBuilder(currentPos: UShort, constantPool: ConstantPool, labels: M
     private val catchBlocks = mutableListOf<CodeBuilder>()
 
     fun _try(block: CodeBuilder.() -> Unit): CodeBuilder {
+        if(tryBlock != null) throw IllegalStateException("Try block is already defined. Only one is allowed.")
+        
         val codeBuilder = CodeBuilder(initialOffset = currentPos, constantPool = constantPool, labels = labels)
         codeBuilder.block()
         this.tryBlock = codeBuilder

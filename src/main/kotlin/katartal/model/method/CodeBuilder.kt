@@ -16,8 +16,8 @@ open class CodeBuilder(
     internal val labels: MutableMap<String, Label>,
     internal val variables: MutableList<LocalVariable> = mutableListOf(),
     internal val constantPool: ConstantPool
-) {
-    val instructions = mutableListOf<InstructionBuilder>()
+) : InstructionContainer {
+    val instructions = mutableListOf<InstructionContainer>()
     val frames = mutableListOf<StackFrameBuilder.StackFrame>()
     val exceptionHandlers = mutableListOf<ExceptionHandler>()
 
@@ -91,12 +91,12 @@ open class CodeBuilder(
     val currentPos: UShort
         get() = (initialOffset + size).toUShort()
 
-    val size: UShort
-        get() = instructions.fold(0) { acc, inst -> acc + inst.size }.toUShort()
+    override val size: UShort
+        get() = instructions.fold(0u) { acc, inst -> (acc + inst.size).toUShort() }
 
     fun _lazyInstruction(
         code: ByteCode,
-        reserve: Int,
+        reserve: UShort,
         evaluate: LazyInstructionBuilder.() -> Unit
     ): LazyInstructionBuilder {
         val lazyInstructionBuilder = InstructionBuilder.lazy(code, reserve, evaluate)

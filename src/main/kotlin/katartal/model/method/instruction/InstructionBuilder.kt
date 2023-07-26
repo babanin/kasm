@@ -2,8 +2,9 @@ package katartal.model.method.instruction
 
 import katartal.model.ByteCode
 import katartal.model.CPoolIndex
+import katartal.model.method.InstructionContainer
 
-sealed class InstructionBuilder(val code: ByteCode) {
+sealed class InstructionBuilder(val code: ByteCode) : InstructionContainer {
     val operands = mutableListOf<UByte>()
 
     fun _atype(type: UByte) {
@@ -46,8 +47,8 @@ sealed class InstructionBuilder(val code: ByteCode) {
         operands += (num.toInt() and 255).toUByte()
     }
 
-    open val size: Int
-        get() = 1 + operands.size
+    override val size: UShort
+        get() = (1 + operands.size).toUShort()
 
     override fun toString(): String = "InstructionBuilder(code=$code, operands=$operands)"
 
@@ -58,7 +59,7 @@ sealed class InstructionBuilder(val code: ByteCode) {
             return EagerInstructionBuilder(code)
         }
 
-        fun lazy(code: ByteCode, reserve: Int, evaluator: LazyInstructionBuilder.() -> Unit): LazyInstructionBuilder {
+        fun lazy(code: ByteCode, reserve: UShort, evaluator: LazyInstructionBuilder.() -> Unit): LazyInstructionBuilder {
             return LazyInstructionBuilder(code, reserve, evaluator)
         }
     }
