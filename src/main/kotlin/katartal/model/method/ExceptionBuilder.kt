@@ -32,7 +32,7 @@ class ExceptionBuilder(currentPos: UShort, constantPool: ConstantPool, labels: M
         return codeBuilder
     }
 
-    override fun flush() {
+     fun flush() :  {
         if (tryBlock != null) {
             this.plus(tryBlock!!)
         }

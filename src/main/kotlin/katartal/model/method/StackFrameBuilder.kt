@@ -1,6 +1,5 @@
 package katartal.model.method
 
-import katartal.util.descriptor
 import katartal.util.path
 
 class StackFrameBuilder(private val absoluteOffset: UShort) {
@@ -16,7 +15,7 @@ class StackFrameBuilder(private val absoluteOffset: UShort) {
         frames += sameFrame
         return sameFrame
     }
-    
+
     /**
      * The frame type same_locals_1_stack_item_frame is represented by tags in the range [64, 127].
      * If the frame_type is same_locals_1_stack_item_frame, it means the frame has exactly the same locals as the
@@ -44,9 +43,9 @@ class StackFrameBuilder(private val absoluteOffset: UShort) {
     }
 
     /**
-     * The frame type chop_frame is represented by tags in the range [248-250]. 
-     * If the frame_type is chop_frame, it means that the operand stack is empty and the current locals are the 
-     * same as the locals in the previous frame, except that the k last locals are absent. 
+     * The frame type chop_frame is represented by tags in the range [248-250].
+     * If the frame_type is chop_frame, it means that the operand stack is empty and the current locals are the
+     * same as the locals in the previous frame, except that the k last locals are absent.
      * The value of k is given by the formula 251 - frame_type.
      */
     fun _chop(k: Int): ChopFrame {

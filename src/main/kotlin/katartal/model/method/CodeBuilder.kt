@@ -6,31 +6,26 @@ import katartal.model.ConstantPool
 import katartal.model.method.instruction.InstructionBuilder
 import katartal.model.method.instruction.LazyInstructionBuilder
 import katartal.util.descriptor
+import katartal.util.max
 import katartal.util.path
-import kotlin.math.max
 
 open class CodeBuilder(
-    var maxLocals: Int = -1,
-    var maxStack: Int = -1,
+    var maxLocals: UShort = 0u,
+    var maxStack: UShort = 0u,
     private val initialOffset: UShort = 0u,
     internal val labels: MutableMap<String, Label>,
     internal val variables: MutableList<LocalVariable> = mutableListOf(),
     internal val constantPool: ConstantPool
-) : InstructionContainer {
-    val instructions = mutableListOf<InstructionContainer>()
+) : InstructionContainer() {
+    val code = mutableListOf<InstructionContainer>()
     val frames = mutableListOf<StackFrameBuilder.StackFrame>()
     val exceptionHandlers = mutableListOf<ExceptionHandler>()
 
-    private fun ensureStackCapacity(minStackSize: Int) {
+    private fun ensureStackCapacity(minStackSize: UShort) {
         maxStack = max(maxStack, minStackSize)
     }
 
-    fun _return(boolean: Boolean) {
-        ensureStackCapacity(1)
-
-        _instruction(if (boolean) ByteCode.ICONST_1 else ByteCode.ICONST_0)
-        _instruction(ByteCode.IRETURN)
-    }
+    override fun instructions(): List<InstructionBuilder> = code.flatMap { it.instructions() }
 
     fun _ldc(cpIndex: CPoolIndex): InstructionBuilder {
         if (cpIndex.index > 255u) {
@@ -70,7 +65,7 @@ open class CodeBuilder(
     }
 
     fun _invokeSpecial(cls: Class<*>, method: String, description: String): List<InstructionBuilder> {
-        ensureStackCapacity(1)
+        ensureStackCapacity(1u)
 
         return listOf(
             _instruction(ByteCode.ALOAD_0),
@@ -81,7 +76,7 @@ open class CodeBuilder(
     }
 
     fun _invokeVirtual(cls: Class<*>, method: String, description: String): InstructionBuilder {
-        ensureStackCapacity(2)
+        ensureStackCapacity(2u)
 
         return _instruction(ByteCode.INVOKEVIRTUAL) {
             _indexU2(constantPool.writeMethodRef(cls.path(), method, description))
@@ -91,8 +86,8 @@ open class CodeBuilder(
     val currentPos: UShort
         get() = (initialOffset + size).toUShort()
 
-    override val size: UShort
-        get() = instructions.fold(0u) { acc, inst -> (acc + inst.size).toUShort() }
+    val size: UShort
+        get() = code.fold(0u) { acc, inst -> (acc + inst.size).toUShort() }
 
     fun _lazyInstruction(
         code: ByteCode,
@@ -100,14 +95,14 @@ open class CodeBuilder(
         evaluate: LazyInstructionBuilder.() -> Unit
     ): LazyInstructionBuilder {
         val lazyInstructionBuilder = InstructionBuilder.lazy(code, reserve, evaluate)
-        instructions += lazyInstructionBuilder
+        this.code += lazyInstructionBuilder
 
         return lazyInstructionBuilder
     }
 
     fun _lazyInstruction(code: ByteCode, evaluate: LazyInstructionBuilder.() -> Unit): LazyInstructionBuilder {
         val lazyInstructionBuilder = InstructionBuilder.lazy(code, code.expectedParameters, evaluate)
-        instructions += lazyInstructionBuilder
+        this.code += lazyInstructionBuilder
 
         return lazyInstructionBuilder
     }
@@ -115,13 +110,13 @@ open class CodeBuilder(
     fun _instruction(code: ByteCode, init: InstructionBuilder.() -> Unit): InstructionBuilder {
         val builder = InstructionBuilder.eager(code)
         builder.init()
-        instructions.add(builder)
+        this.code.add(builder)
         return builder
     }
 
     fun _instruction(code: ByteCode): InstructionBuilder {
         val builder = InstructionBuilder.eager(code)
-        instructions.add(builder)
+        this.code.add(builder)
         return builder
     }
 
@@ -227,32 +222,67 @@ open class CodeBuilder(
     }
 
     operator fun plus(other: CodeBuilder): CodeBuilder {
-        this.instructions += other.instructions
+        this.code += other.code
         this.frames += other.frames
         this.maxStack = max(maxStack, other.maxStack)
         this.maxLocals = max(maxLocals, other.maxLocals)
         return this
     }
 
-    open fun flush() {
-        var stackSize = 0
-        for (instruction in instructions) {
-            instruction.flush()
+    fun flush() : Code {
+        var stackSize : UShort = 0u
+        
+        val instructions = mutableListOf<Instruction>()
+        for (instructionBuilder in instructions()) {
+            instructionBuilder.flush()
 
-            val code = instruction.code
+            val code : ByteCode = instructionBuilder.code
             if (code.resetStack != null) {
-                stackSize = code.resetStack
+                stackSize = code.resetStack.toUShort()
             } else {
-                stackSize += code.stackChange
+                stackSize = if(code.stackChange > stackSize.toInt()) {
+                    0u
+                } else {
+                    (stackSize.toInt() + code.stackChange).toUShort()
+                }
             }
 
             this.maxStack = max(maxStack, stackSize)
+            instructions += Instruction(code, instructionBuilder.operands)
         }
+        
+        return Code(maxStack, maxLocals, instructions)
     }
 
     fun _exception(function: ExceptionBuilder.() -> Unit) : ExceptionBuilder {
         val exceptionBuilder = ExceptionBuilder(currentPos, constantPool, labels)
         exceptionBuilder.function()
+        code += exceptionBuilder
         return exceptionBuilder
+    }
+
+    fun build(): Code {
+        var stackSize : UShort = 0u
+
+        val instructions = mutableListOf<Instruction>()
+        for (instructionBuilder in instructions()) {
+            instructionBuilder.flush()
+
+            val code : ByteCode = instructionBuilder.code
+            if (code.resetStack != null) {
+                stackSize = code.resetStack.toUShort()
+            } else {
+                stackSize = if(code.stackChange > stackSize.toInt()) {
+                    0u
+                } else {
+                    (stackSize.toInt() + code.stackChange).toUShort()
+                }
+            }
+
+            this.maxStack = max(maxStack, stackSize)
+            instructions += Instruction(code, instructionBuilder.operands)
+        }
+
+        return Code(maxStack, maxLocals, instructions)
     }
 }

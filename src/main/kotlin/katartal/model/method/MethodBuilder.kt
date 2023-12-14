@@ -35,7 +35,11 @@ class MethodBuilder(
 
     private val throws = mutableListOf<String>()
     private var parametersDescriptor: String
-    private val codeBuilders: MutableList<CodeBuilder> = mutableListOf()
+    private val codeBuilder: CodeBuilder = CodeBuilder(
+        constantPool = constantPool,
+        labels = labels,
+        variables = variables
+    )
 
     init {
         nameCpIndex = constantPool.writeUtf8(name)
@@ -65,18 +69,18 @@ class MethodBuilder(
         return localVariable
     }
 
-    fun _code(maxLocals: Int = -1, maxStack: Int = -1, init: CodeBuilder.() -> Unit): CodeBuilder {
-        val codeBuilder =
+    fun _code(maxLocals: Int = -1, maxStack: UShort = 0u, init: CodeBuilder.() -> Unit): CodeBuilder {
+        val subCodeBuilder =
             CodeBuilder(
-                maxLocals = if (maxLocals == -1) parameters.size + 1 else maxLocals,
+                maxLocals = (if (maxLocals == -1) parameters.size + 1 else maxLocals).toUShort(),
                 maxStack,
                 constantPool = constantPool,
                 labels = labels,
                 variables = variables
             )
-        codeBuilders += codeBuilder
-        codeBuilder.init()
-        return codeBuilder
+        codeBuilder.code += subCodeBuilder
+        subCodeBuilder.init()
+        return subCodeBuilder
     }
 
     fun _annotate(annotation: Class<*>) {
@@ -108,14 +112,10 @@ class MethodBuilder(
 
     fun flush() {
         if (!(access[ABSTRACT] || access[NATIVE])) {
-            val codeBuilder =
-                if (codeBuilders.isEmpty()) _code { _return() }
-                else codeBuilders.reduce { acc, codeBuilder -> acc + codeBuilder }
+            val code = codeBuilder.build()
 
-            codeBuilder.flush()
-
-            attributes += buildCodeAttribute(codeBuilder)
-            attributes += buildLocalVariableTable(codeBuilder)
+            attributes += buildCodeAttribute(code)
+            attributes += buildLocalVariableTable(code)
         }
 
         if (throws.isNotEmpty()) {
@@ -137,7 +137,7 @@ class MethodBuilder(
         )
     }
 
-    private fun buildStackMapFrameTable(codeBuilder: CodeBuilder): MethodCodeAttribute {
+    private fun buildStackMapFrameTable(code: Code): MethodCodeAttribute {
         val entries = mutableListOf<StackMapFrameAttribute>()
 
         fun mapType(it: StackFrameBuilder.Type) = when (it) {
@@ -166,7 +166,10 @@ class MethodBuilder(
 
                 is StackFrameBuilder.ChopFrame -> chop_frame(offsetDelta, frame.k)
                 is StackFrameBuilder.SameFrame -> same_frame(offsetDelta.toUByte())
-                is StackFrameBuilder.SameLocals1StackItem -> same_locals_1_stack_item_frame(offsetDelta, mapType(frame.local))
+                is StackFrameBuilder.SameLocals1StackItem -> same_locals_1_stack_item_frame(
+                    offsetDelta,
+                    mapType(frame.local)
+                )
             }
 
             /*
@@ -187,12 +190,12 @@ class MethodBuilder(
         return StackMapTableAttribute(constantPool.writeUtf8("StackMapTable"), entries)
     }
 
-    private fun buildCodeAttribute(codeBuilder: CodeBuilder): CodeAttribute {
+    private fun buildCodeAttribute(code: Code): CodeAttribute {
         var position = 0
 
         println("Code: ")
         val codeArray = DynamicByteArray()
-        for (instruction in codeBuilder.instructions) {
+        for (instruction in code.instructions) {
             codeArray.putU1(instruction.code.opcode)
             for (operand in instruction.operands) {
                 codeArray.putU1(operand)
@@ -209,21 +212,21 @@ class MethodBuilder(
 
         return CodeAttribute(
             constantPool.writeUtf8("Code"),
-            codeBuilder.maxStack.toUShort(),
+            code.maxStack,
             (parameters.size + variables.size + (if (access[STATIC]) 0 else 1)).toUShort(),
             codeArray.toByteArray(),
-            attributes = listOf(buildStackMapFrameTable(codeBuilder))
+            attributes = listOf(buildStackMapFrameTable(code))
         )
     }
 
-    private fun buildLocalVariableTable(codeBuilder: CodeBuilder): LocalVariableTableAttribute {
+    private fun buildLocalVariableTable(code: Code): LocalVariableTableAttribute {
         val localVarsTable = mutableListOf<LocalVariableTableEntry>()
 
         var index: UShort = 0u
         if (!access[STATIC]) {
             localVarsTable += LocalVariableTableEntry(
                 0u,
-                codeBuilder.currentPos,
+                code.size,
                 constantPool.writeUtf8("this"),
                 constantPool.writeUtf8(currentClass),
                 index
@@ -235,7 +238,7 @@ class MethodBuilder(
         for (parameter in parameters) {
             localVarsTable += LocalVariableTableEntry(
                 0u,
-                codeBuilder.currentPos,
+                code.size,
                 constantPool.writeUtf8(parameter.first),
                 constantPool.writeUtf8(
                     when (parameter.second) {

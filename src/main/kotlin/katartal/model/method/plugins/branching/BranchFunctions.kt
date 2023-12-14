@@ -25,6 +25,6 @@ fun CodeBuilder._if(code: ByteCode, subRoutine: CodeBuilder.() -> Unit): List<In
 
     val inst = mutableListOf<InstructionBuilder>()
     inst += ifInst
-    inst += codeBuilder.instructions
+    inst += codeBuilder.code
     return inst
 }

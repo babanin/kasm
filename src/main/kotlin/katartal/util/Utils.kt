@@ -20,3 +20,7 @@ fun methodDescriptor(parameters: List<Class<*>>, returnType: Class<*>): String {
         postfix = ")"
     ) { it.descriptor() } + returnType.descriptor()
 }
+
+fun max(a: UShort, b: UShort): UShort {
+    return if (a > b) a else b
+}

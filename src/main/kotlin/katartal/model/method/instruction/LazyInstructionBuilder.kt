@@ -1,6 +1,7 @@
 package katartal.model.method.instruction
 
 import katartal.model.ByteCode
+import katartal.model.method.Instruction
 
 class LazyInstructionBuilder internal constructor(
     code: ByteCode,
@@ -12,7 +13,7 @@ class LazyInstructionBuilder internal constructor(
     override val size: UShort
         get() = (1u + reserve).toUShort()
 
-    override fun flush() {
+    override fun flush() : Instruction {
         this.evaluator()
 
         if (operands.size.toUShort() != reserve) {
@@ -21,5 +22,7 @@ class LazyInstructionBuilder internal constructor(
                         "Branch offset instructions might drift."
             )
         }
+        
+        return Instruction(code, operands)
     }
 }

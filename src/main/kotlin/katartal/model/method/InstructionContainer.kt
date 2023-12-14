@@ -1,5 +1,7 @@
 package katartal.model.method
 
-interface InstructionContainer {
-    val size : UShort
+import katartal.model.method.instruction.InstructionBuilder
+
+abstract class InstructionContainer {
+    abstract fun instructions() : List<InstructionBuilder>
 }
